@@ -5,4 +5,4 @@ Interne tools van Gewoon Doen Marketing. Elke map is een losse app met een eigen
 
 | Map | Wat | Vercel-project |
 |---|---|---|
-| [`commissieportaal/`](commissieportaal/) | Indienen van setterlijsten, commissieberekening en opkomst | `commissieportaal` |
+| [`commissieportaal/`](commissieportaal/) | Indienen van setterlijsten, commissieberekening en opkomst | `commissieportaal` — https://commissie.gewoondoenmarketing.nl |
