@@ -25,40 +25,29 @@ export default async function AdminHome() {
       </p>
 
       {rows.length > 0 && (
-        <div className="table-wrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Setter</th>
-                <th>Periode</th>
-                <th>Status</th>
-                <th className="num">Groen</th>
-                <th className="num">Bedrag</th>
-                <th>Ingediend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td>
-                    <Link href={`/admin/indiening/${r.id}`} className="strong-link">
-                      {r.setter.naam}
-                    </Link>
+        <ul className="sub-list">
+          {rows.map((r) => (
+            <li key={r.id}>
+              <Link href={`/admin/indiening/${r.id}`} className="sub-card">
+                <span className="sub-card__top">
+                  <span className="sub-card__name">
+                    {r.setter.naam}
                     {r.setter.is_nieuw && <span className="tag tag--nieuw">Nieuwe setter</span>}
-                    <div className="muted small">{r.setter.email}</div>
-                  </td>
-                  <td>{r.period.label}</td>
-                  <td>
-                    <span className={`pill pill--${r.status}`}>{STATUS_LABEL[r.status]}</span>
-                  </td>
-                  <td className="num">{r.counts_json.totaal.groen}</td>
-                  <td className="num strong">{formatEuro(r.commission_json.totaalCents)}</td>
-                  <td className="muted">{formatDateTime(r.submitted_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </span>
+                  <span className="sub-card__amount">{formatEuro(r.commission_json.totaalCents)}</span>
+                </span>
+                <span className="muted small">{r.setter.email}</span>
+                <span className="sub-card__meta">
+                  <span className={`pill pill--${r.status}`}>{STATUS_LABEL[r.status]}</span>
+                  <span className="muted small">
+                    {r.period.label} · {r.counts_json.totaal.groen} groen · ingediend {formatDateTime(r.submitted_at)}
+                  </span>
+                </span>
+                <span className="sub-card__cta">Controleren →</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
     </>
   );

@@ -168,3 +168,15 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
 .leads ul { list-style: none; margin: 0; padding: 0 12px 10px; }
 .leads li { display: grid; grid-template-columns: 32px auto 1fr auto; gap: 10px; align-items: center; padding: 5px 0; border-top: 1px solid var(--rand); font-size: 14px; }
 .lead-name { min-width: 0; overflow-wrap: anywhere; }
+.sub-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sub-card { display: grid; gap: 6px; padding: 14px 16px; border: 1px solid var(--rand); border-radius: 12px; background: var(--wit); color: var(--tekst); text-decoration: none; }
+.sub-card:hover { border-color: var(--primair); }
+.sub-card:focus-visible { outline: 3px solid var(--primair); outline-offset: 2px; }
+.sub-card__top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.sub-card__name { font-weight: 800; font-size: 18px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; overflow-wrap: anywhere; }
+.sub-card__amount { font-weight: 800; font-size: 18px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sub-card__meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.sub-card__cta { color: var(--primair); font-weight: 700; font-size: 14px; }
+.admin-bar { flex-wrap: wrap; }
+.admin-bar__right { flex-wrap: wrap; min-width: 0; }
+.admin-bar__right .muted { overflow-wrap: anywhere; }
