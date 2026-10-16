@@ -20,8 +20,24 @@ export type SubmitErrorCode =
   | "al_goedgekeurd"
   | "onbekend";
 
+/** Alles wat nodig is voor de controlemail aan de admin. */
+export interface SubmittedDetails {
+  setterNaam: string;
+  setterEmail: string;
+  periode: PeriodRange;
+  sheetUrl: string;
+  parsed: ParseResult;
+  commission: Commission;
+}
+
 export type SubmitResult =
-  | { ok: true; submissionId: string; vervangen: boolean; nieuweSetter: boolean }
+  | {
+      ok: true;
+      submissionId: string;
+      vervangen: boolean;
+      nieuweSetter: boolean;
+      details: SubmittedDetails;
+    }
   | { ok: false; code: SubmitErrorCode; message: string; field?: keyof SubmitInput };
 
 export interface CountsJson {
@@ -154,5 +170,6 @@ export async function submitSheet(input: SubmitInput, deps: SubmitDeps): Promise
     submissionId: saved.id,
     vervangen: saved.result === "vervangen",
     nieuweSetter: !bestaand,
+    details: { setterNaam: naam, setterEmail: email, periode, sheetUrl, parsed, commission },
   };
 }

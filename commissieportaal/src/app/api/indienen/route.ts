@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
+import { buildAdminReviewMail } from "@/lib/mail/admin-review";
+import { sendMail } from "@/lib/mail/resend";
 import { fetchSpreadsheet } from "@/lib/sheets/fetch";
 import { submitSheet } from "@/lib/submissions/submit";
 import { supabaseSubmissionStore } from "@/lib/submissions/supabase-store";
@@ -27,6 +29,18 @@ export async function POST(req: Request) {
     if (!result.ok) {
       const status = result.code === "al_goedgekeurd" ? 409 : 422;
       return NextResponse.json({ ok: false, message: result.message, field: result.field }, { status });
+    }
+    // Controlemail aan de admin. Mislukt de mail, dan blijft de indiening gewoon staan.
+    try {
+      const mail = buildAdminReviewMail(result.details, {
+        submissionId: result.submissionId,
+        appUrl: env("APP_URL"),
+        vervangen: result.vervangen,
+        nieuweSetter: result.nieuweSetter,
+      });
+      await sendMail({ to: env("ADMIN_EMAIL"), replyTo: result.details.setterEmail, ...mail });
+    } catch (e) {
+      console.error("Controlemail niet verstuurd", result.submissionId, e);
     }
     // Geen bedragen of tellingen naar de setter.
     return NextResponse.json({ ok: true });
