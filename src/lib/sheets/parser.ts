@@ -93,6 +93,7 @@ export function parseTab(
     kolommen,
     rijen: [],
     counts: emptyCounts(),
+    eigenTelling: null,
   };
 
   const naamCol = kolommen.naam;
@@ -114,7 +115,11 @@ export function parseTab(
     const cells = rows[i].values ?? [];
     const naamCell = cells[naamCol];
     const naam = cellText(naamCell);
-    if (!isLeadName(naam)) continue;
+    if (!isLeadName(naam)) {
+      const n = Number(naam.trim().replace(",", "."));
+      if (naam.trim() !== "" && Number.isFinite(n)) tab.eigenTelling = n;
+      continue;
+    }
 
     const bg = naamCell?.effectiveFormat?.backgroundColor;
     const rgb = bg ? apiColorToRgb(bg) : null;
@@ -152,6 +157,14 @@ export function parseTab(
         bericht: `"${lead.naam}" (rij ${lead.rij}) heeft ${pogingenRuw} contactpogingen; er tellen er ${opties.maxPogingenPerLead} mee.`,
       });
     }
+  }
+
+  if (tab.rijen.length > 0 && tab.eigenTelling !== null && tab.eigenTelling !== tab.counts.groen) {
+    waarschuwingen.push({
+      type: "telling_wijkt_af",
+      tab: tabName,
+      bericht: `Tabblad "${tabName}": de setter telde zelf ${tab.eigenTelling}, het systeem telt ${tab.counts.groen} groen.`,
+    });
   }
 
   if (tab.rijen.length === 0) {

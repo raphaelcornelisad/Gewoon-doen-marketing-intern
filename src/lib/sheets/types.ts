@@ -73,9 +73,11 @@ export interface TabResult {
   kolommen: Record<ColumnKey, number | null>;
   rijen: LeadRow[];
   counts: Counts;
+  /** Getal onderaan de tab: de eigen telling van de setter (geen lead) */
+  eigenTelling: number | null;
 }
 
-export type WarningType = "ongekleurd" | "te_veel_pogingen" | "kolom_ontbreekt";
+export type WarningType = "ongekleurd" | "te_veel_pogingen" | "kolom_ontbreekt" | "telling_wijkt_af";
 
 export interface Warning {
   type: WarningType;

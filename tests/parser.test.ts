@@ -13,7 +13,20 @@ describe("testsheet 14 sept - 14 okt", () => {
   });
 
   it("geeft de verwachte totalen", () => {
-    expect(result.totaal).toEqual({ groen: 318, geel: 64, rood: 182, ongekleurd: 39, pogingen: 568 });
+    expect(result.totaal).toMatchObject({ groen: 318, geel: 64, rood: 182, pogingen: 568 });
+  });
+
+  it("39 witte rijen = 24 ongekleurde leads + 15 eigen tellingen (geen leads)", () => {
+    expect(result.totaal.ongekleurd).toBe(24);
+    const tellingen = result.tabs.filter((t) => t.eigenTelling !== null);
+    expect(tellingen).toHaveLength(15);
+    expect(result.totaal.ongekleurd + tellingen.length).toBe(39);
+  });
+
+  it("waarschuwt als de eigen telling afwijkt van het aantal groen", () => {
+    const afwijkend = result.waarschuwingen.filter((w) => w.type === "telling_wijkt_af");
+    expect(afwijkend.map((w) => w.tab)).toEqual(["Solea HIFU"]);
+    expect(tab("Solea HIFU").eigenTelling).toBe(44);
   });
 
   it.each([
@@ -36,7 +49,7 @@ describe("testsheet 14 sept - 14 okt", () => {
   });
 
   it("geeft een waarschuwing per ongekleurde rij", () => {
-    expect(result.waarschuwingen.filter((w) => w.type === "ongekleurd")).toHaveLength(39);
+    expect(result.waarschuwingen.filter((w) => w.type === "ongekleurd")).toHaveLength(24);
   });
 
   it("bewaart ruwe rijdata per lead", () => {
