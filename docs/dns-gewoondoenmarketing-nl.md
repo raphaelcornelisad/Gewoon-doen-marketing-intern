@@ -32,7 +32,11 @@ v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwADnKvFv+vULiKnjoK
 ## Nog te controleren
 
 - [x] Rest van de TXT/CNAME-lijst in Strato: compleet, `groeiscan` is het laatste record
-- [ ] Twee subdomeinen in Strato Domeinbeheer ("Subdomeinen weergeven (2)") nakijken op eigen records
+- [x] Subdomeinen in Strato: `groeiscan` (CNAME hierboven) en `mail`
+- [ ] Records van subdomein `mail` nakijken (eigen A/CNAME?)
+- [ ] `www`: staat niet als subdomein in Strato; Strato laat `www` standaard meewijzen met het hoofddomein.
+      In Vercel expliciet toevoegen: A `www` → `185.104.29.170` en AAAA `www` → `2a06:2ec0:1:0:0:0:0:168`
+      (eerst controleren dat www.gewoondoenmarketing.nl nu dezelfde site laat zien)
 
 ## Nieuw toe te voegen (na overstap)
 
