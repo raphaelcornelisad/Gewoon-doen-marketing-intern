@@ -28,8 +28,9 @@ npm test                     # parser, berekening, indienregels, migratie
 
 ### 2. Domein (bijv. `commissie.gewoondoenmarketing.nl`)
 1. Vercel → project → **Settings → Domains → Add** en vul het subdomein in.
-2. Vercel toont een DNS-record, meestal `CNAME commissie → cname.vercel-dns.com`.
-   Zet dat record bij de partij waar de DNS van gewoondoenmarketing.nl beheerd wordt.
+2. Vercel toont een CNAME-waarde. Zet die bij Strato: gewoondoenmarketing.nl → DNS →
+   TXT- en CNAME-records → configureren → Maak nog een record aan → type CNAME,
+   voorvoegsel `commissie`, waarde uit Vercel → Instellingen doorvoeren.
 3. Zet `APP_URL` op `https://commissie.gewoondoenmarketing.nl`.
 
 ### 3. Resend (e-mail vanaf gewoondoenmarketing.nl)

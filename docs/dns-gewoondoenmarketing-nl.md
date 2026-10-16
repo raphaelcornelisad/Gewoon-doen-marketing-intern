@@ -1,5 +1,9 @@
 # DNS-overzicht gewoondoenmarketing.nl
 
+> **Besluit 16 okt 2026:** de nameservers blijven bij Strato. Het commissieportaal krijgt alleen een
+> CNAME-record bij Strato (bijv. `commissie` → waarde uit Vercel). Dit overzicht is bewaard als
+> naslag voor als de DNS later toch naar Vercel verhuist.
+
 Overgenomen uit Strato (registrar) op 16 okt 2026, als voorbereiding op het omzetten van de
 nameservers naar Vercel (`ns1.vercel-dns.com`, `ns2.vercel-dns.com`).
 Deze records moeten in Vercel DNS staan **voordat** de nameservers bij Strato worden omgezet.
