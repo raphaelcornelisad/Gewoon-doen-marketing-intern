@@ -31,8 +31,8 @@ v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwADnKvFv+vULiKnjoK
 
 ## Nog te controleren
 
-- [ ] Rest van de TXT/CNAME-lijst in Strato (onder `groeiscan`)
-- [ ] Subdomeinen in Strato Domeinbeheer (bijv. `www`) met eigen instellingen
+- [x] Rest van de TXT/CNAME-lijst in Strato: compleet, `groeiscan` is het laatste record
+- [ ] Twee subdomeinen in Strato Domeinbeheer ("Subdomeinen weergeven (2)") nakijken op eigen records
 
 ## Nieuw toe te voegen (na overstap)
 
