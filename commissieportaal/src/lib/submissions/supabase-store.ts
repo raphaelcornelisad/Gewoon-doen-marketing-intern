@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { settingsFromRow, type SettingsRow } from "../settings";
+import { opkomstVoorPeriode, type AttendanceRow, type ChecklistItem } from "../attendance";
 import type { SubmissionStore } from "./submit";
 
 function check<T>(res: { data: T; error: { message: string } | null }): T {
@@ -63,18 +64,22 @@ export function supabaseSubmissionStore(sb: SupabaseClient): SubmissionStore {
       return row?.status ?? null;
     },
 
-    async confirmedAttendance(setterId, eind) {
-      const period = check(await sb.from("periods").select("id").eq("eind", eind).maybeSingle());
-      if (!period) return 0;
-      const row = check(
+    async confirmedAttendance(setterId, start) {
+      // Opkomst van de vorige periode: door admin vastgesteld, anders het aantal "Ja" van de klinieken.
+      const prev = check(await sb.from("periods").select("id").eq("eind", start).maybeSingle());
+      if (!prev) return 0;
+      const att = check(
         await sb
           .from("attendance")
-          .select("approved_count, status")
+          .select("id, status, max_count, approved_count, paid_in_period_id")
           .eq("setter_id", setterId)
-          .eq("period_id", period.id)
+          .eq("period_id", prev.id)
           .maybeSingle(),
-      );
-      return row?.status === "bevestigd" ? (row.approved_count ?? 0) : 0;
+      ) as AttendanceRow | null;
+      const lists = check(
+        await sb.from("checklists").select("items_json").eq("setter_id", setterId).eq("period_id", prev.id),
+      ) as { items_json: ChecklistItem[] }[];
+      return opkomstVoorPeriode(att, (lists ?? []).map((l) => l.items_json), "").aantal;
     },
 
     async save(s) {

@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ApproveButton, OpkomstForm, ResendButton, TestModeToggle } from "@/components/admin/actions";
 import { AdminBar } from "@/components/admin/admin-bar";
 import { LeadList } from "@/components/admin/lead-list";
 import { formatDateTime, STATUS_LABEL } from "@/lib/admin/format";
 import { getSubmission, replacedVersions } from "@/lib/admin/queries";
 import { requireAdmin } from "@/lib/auth/session";
+import { countAnswers } from "@/lib/attendance";
 import { formatEuro } from "@/lib/commission";
+import { checklistsFor, checklistUrl, opkomstInfo, recalc } from "@/lib/opkomst/server";
+import type { AppSettings } from "@/lib/settings";
+import { db } from "@/lib/supabase/server";
 import type { Warning } from "@/lib/sheets/types";
 
 export const metadata: Metadata = { title: "Controlepagina · Gewoon Doen Marketing" };
@@ -26,7 +31,23 @@ export default async function Controlepagina({ params }: { params: Promise<{ id:
   if (!s) notFound();
 
   const snap = s.snapshot_json;
-  const c = s.commission_json;
+  const open = s.status === "te_controleren";
+  const [opk, lists, settingsRow] = await Promise.all([
+    opkomstInfo(s.setter.id, s.period.start, s.period.id),
+    checklistsFor(s.setter.id, s.period.id),
+    db().from("settings").select("clinic_mail_test_mode").eq("id", 1).maybeSingle(),
+  ]);
+  const testmodus = (settingsRow.data as { clinic_mail_test_mode: boolean } | null)?.clinic_mail_test_mode ?? true;
+  const settingsJson = (s as unknown as { settings_json: AppSettings }).settings_json;
+  // Zolang de indiening open staat, rekenen we live met de actuele opkomst; daarna geldt het vastgezette bedrag.
+  const c = open ? recalc(s.counts_json.totaal, settingsJson, opk.bron === "al_uitbetaald" ? 0 : opk.aantal) : s.commission_json;
+  const prevTelling = opk.checklists.reduce(
+    (t, l) => {
+      const x = countAnswers(l.items_json);
+      return { ja: t.ja + x.ja, nee: t.nee + x.nee, open: t.open + x.open };
+    },
+    { ja: 0, nee: 0, open: 0 },
+  );
   const t = snap.totaal;
   const tabs = snap.tabs.filter((x) => !x.overgeslagen);
   const skipped = snap.tabs.filter((x) => x.overgeslagen);
@@ -42,8 +63,10 @@ export default async function Controlepagina({ params }: { params: Promise<{ id:
         : key === "staffel"
           ? `floor(${c.meetellendeLeads} / 100) = ${aantal} × ${formatEuro(tarief)}`
           : aantal
-            ? `${aantal} verschenen × ${formatEuro(tarief)}`
-            : "nog geen bevestigde opkomst";
+            ? `${aantal} verschenen × ${formatEuro(tarief)}${open ? (opk.bron === "admin" ? " (door jou vastgesteld)" : " (volgens klinieken)") : ""}`
+            : opk.bron === "al_uitbetaald"
+              ? "al uitbetaald in een eerdere periode"
+              : "nog geen opkomst vorige periode";
 
   return (
     <>
@@ -205,12 +228,82 @@ export default async function Controlepagina({ params }: { params: Promise<{ id:
         <LeadList tabs={tabs.map((x) => ({ tab: x.tab, rijen: x.rijen.map(({ cellen: _c, ...r }) => r) }))} />
       </section>
 
-      <section className="card muted-card">
-        <h2>Nog te bouwen</h2>
-        <p className="muted">
-          Correcties met opmerking, opkomstbonus vorige periode en de knop Goedkeuren komen in de volgende stap.
-        </p>
+      <section className="card">
+        <h2>Opkomstbonus vorige periode</h2>
+        {!opk.prev || !opk.attendance ? (
+          <p className="muted">Geen goedgekeurde vorige periode voor deze setter, dus geen opkomstbonus.</p>
+        ) : (
+          <>
+            <p className="muted small">
+              Periode {opk.prev.label} · {opk.attendance.status === "uitbetaald" ? "uitbetaald, staat op slot" : "telt mee in deze indiening"}
+            </p>
+            <div className="kv">
+              <div><strong>{opk.attendance.max_count}</strong><span>Maximum (groen)</span></div>
+              <div><strong>{prevTelling.ja}</strong><span>Verschenen volgens klinieken</span></div>
+              <div><strong>{prevTelling.nee}</strong><span>Niet verschenen</span></div>
+              <div><strong>{prevTelling.open + Math.max(0, opk.attendance.max_count - prevTelling.ja - prevTelling.nee - prevTelling.open)}</strong><span>Nog open</span></div>
+              <div><strong>{opk.aantal}</strong><span>Telt mee ({opk.bron === "admin" ? "vastgesteld door jou" : opk.bron === "klinieken" ? "klinieken" : "–"})</span></div>
+            </div>
+            <ul className="warns">
+              {opk.checklists.map((l) => {
+                const t = countAnswers(l.items_json);
+                return (
+                  <li key={l.id}>
+                    <span className={`tag ${l.submitted_at ? "" : "tag--nieuw"}`}>{l.submitted_at ? "Ingediend" : "Open"}</span>
+                    <span>{l.clinic.naam}: {t.ja} ja · {t.nee} nee · {t.open} open</span>
+                  </li>
+                );
+              })}
+            </ul>
+            {open && opk.attendance.status !== "uitbetaald" && (
+              <div style={{ marginTop: 12 }}>
+                <OpkomstForm attendanceId={opk.attendance.id} max={opk.attendance.max_count} huidig={opk.attendance.approved_count} />
+              </div>
+            )}
+          </>
+        )}
       </section>
+
+      {open ? (
+        <section className="card">
+          <h2>Goedkeuren</h2>
+          <div style={{ display: "grid", gap: 12 }}>
+            <TestModeToggle aan={testmodus} />
+            <ApproveButton id={s.id} bedrag={formatEuro(c.totaalCents)} testmodus={testmodus} />
+          </div>
+        </section>
+      ) : (
+        <section className="card">
+          <h2>Afvinklijsten klinieken</h2>
+          {s.approved_at && <p className="muted small">Goedgekeurd op {formatDateTime(s.approved_at)}. Bedrag staat op slot.</p>}
+          {lists.length === 0 ? (
+            <p className="muted">Geen afvinklijsten (geen groene leads met een gekoppelde kliniek).</p>
+          ) : (
+            <ul className="warns">
+              {lists.map((l) => {
+                const t = countAnswers(l.items_json);
+                return (
+                  <li key={l.id}>
+                    <span className="tag">{l.locked ? "Op slot" : l.submitted_at ? "Ingediend" : l.sent_at ? "Verstuurd" : "Niet verstuurd"}</span>
+                    <span>
+                      <strong>{l.clinic.naam}</strong> · {t.totaal} leads · {t.ja} ja · {t.nee} nee · {t.open} open
+                      <br />
+                      <span className="small muted">
+                        {l.sent_at ? `Verstuurd naar ${l.sent_to} op ${formatDateTime(l.sent_at)}` : "Nog niet verstuurd"}
+                        {" · "}
+                        <a href={checklistUrl(l.token)} target="_blank" rel="noopener noreferrer">Lijst openen ↗</a>
+                        {" · "}
+                      </span>
+                      {!l.locked && <ResendButton checklistId={l.id} periode={s.period.label} />}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div style={{ marginTop: 12 }}><TestModeToggle aan={testmodus} /></div>
+        </section>
+      )}
 
       <p>
         <Link href="/admin">← Terug naar overzicht</Link>

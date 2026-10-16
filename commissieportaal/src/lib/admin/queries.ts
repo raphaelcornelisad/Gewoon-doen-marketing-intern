@@ -43,7 +43,7 @@ export async function getSubmission(id: string): Promise<SubmissionDetail | null
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
   const { data, error } = await db()
     .from("submissions")
-    .select(`${LIST}, snapshot_json, corrections_json`)
+    .select(`${LIST}, snapshot_json, corrections_json, settings_json`)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);

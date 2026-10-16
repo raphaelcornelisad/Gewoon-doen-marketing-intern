@@ -64,8 +64,8 @@ export interface SubmissionStore {
   ensurePeriod(p: PeriodRange): Promise<{ id: string }>;
   /** Status van de actieve indiening voor deze setter en periode, of null. */
   activeSubmissionStatus(setterId: string, periodId: string): Promise<string | null>;
-  /** Door admin bevestigde, nog niet uitbetaalde opkomst van de periode die eindigt op `eind`. */
-  confirmedAttendance(setterId: string, eind: string): Promise<number>;
+  /** Opkomst (aantal verschenen) van de periode die eindigt op `start`, nog niet uitbetaald. */
+  confirmedAttendance(setterId: string, start: string): Promise<number>;
   save(s: NewSubmission): Promise<{ result: "nieuw" | "vervangen" | "geblokkeerd"; id: string }>;
 }
 
