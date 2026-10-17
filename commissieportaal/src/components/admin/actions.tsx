@@ -150,3 +150,51 @@ export function TestModeToggle({ aan }: { aan: boolean }) {
     </div>
   );
 }
+
+export function CorrectionForm({ id, velden }: { id: string; velden: { key: string; label: string; huidig: number }[] }) {
+  const router = useRouter();
+  const [veld, setVeld] = useState(velden[0]?.key ?? "groen");
+  const [nieuw, setNieuw] = useState("");
+  const [opmerking, setOpmerking] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const huidig = velden.find((v) => v.key === veld)?.huidig;
+
+  return (
+    <form
+      className="correction-form"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const r = await post(`/api/admin/indiening/${id}/correctie`, { veld, nieuw: Number(nieuw), opmerking });
+        setMsg(r.data?.message ?? (r.ok ? "Opgeslagen." : "Opslaan mislukt."));
+        if (r.ok) {
+          setNieuw("");
+          setOpmerking("");
+          router.refresh();
+        }
+      }}
+    >
+      <div className="correction-form__row">
+        <label>
+          <span>Wat</span>
+          <select value={veld} onChange={(e) => setVeld(e.target.value)}>
+            {velden.map((v) => (
+              <option key={v.key} value={v.key}>{v.label}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span>Nieuw aantal{huidig !== undefined ? ` (nu ${huidig})` : ""}</span>
+          <input type="number" inputMode="numeric" min={0} required value={nieuw} onChange={(e) => setNieuw(e.target.value)} />
+        </label>
+      </div>
+      <label>
+        <span>Opmerking (verplicht)</span>
+        <input type="text" required minLength={3} value={opmerking} onChange={(e) => setOpmerking(e.target.value)} placeholder="Bijv. 2 leads dubbel in tab Babeau" />
+      </label>
+      <div>
+        <button type="submit" className="button button--small">Correctie opslaan</button>
+      </div>
+      {msg && <span className="small muted">{msg}</span>}
+    </form>
+  );
+}

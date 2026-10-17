@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ApproveButton, OpkomstForm, ResendButton, TestModeToggle } from "@/components/admin/actions";
+import { ApproveButton, CorrectionForm, OpkomstForm, ResendButton, TestModeToggle } from "@/components/admin/actions";
 import { AdminBar } from "@/components/admin/admin-bar";
 import { LeadList } from "@/components/admin/lead-list";
 import { formatDateTime, STATUS_LABEL } from "@/lib/admin/format";
@@ -9,6 +9,7 @@ import { getSubmission, replacedVersions } from "@/lib/admin/queries";
 import { requireAdmin } from "@/lib/auth/session";
 import { countAnswers } from "@/lib/attendance";
 import { formatEuro } from "@/lib/commission";
+import { CORRECTABLE, effectiveCounts, type Correction } from "@/lib/corrections";
 import { checklistsFor, checklistUrl, opkomstInfo, recalc, tabMatches } from "@/lib/opkomst/server";
 import type { AppSettings } from "@/lib/settings";
 import { db } from "@/lib/supabase/server";
@@ -41,8 +42,11 @@ export default async function Controlepagina({ params }: { params: Promise<{ id:
   const nietHerkend = matches.filter((m) => !m.clinic && m.groen > 0);
   const testmodus = (settingsRow.data as { clinic_mail_test_mode: boolean } | null)?.clinic_mail_test_mode ?? true;
   const settingsJson = (s as unknown as { settings_json: AppSettings }).settings_json;
+  const corrections = (s.corrections_json ?? []) as Correction[];
+  const origineel = snap.totaal;
+  const t = effectiveCounts(origineel, corrections);
   // Zolang de indiening open staat, rekenen we live met de actuele opkomst; daarna geldt het vastgezette bedrag.
-  const c = open ? recalc(s.counts_json.totaal, settingsJson, opk.bron === "al_uitbetaald" ? 0 : opk.aantal) : s.commission_json;
+  const c = open ? recalc(t, settingsJson, opk.bron === "al_uitbetaald" ? 0 : opk.aantal) : s.commission_json;
   const prevTelling = opk.checklists.reduce(
     (t, l) => {
       const x = countAnswers(l.items_json);
@@ -50,7 +54,6 @@ export default async function Controlepagina({ params }: { params: Promise<{ id:
     },
     { ja: 0, nee: 0, open: 0 },
   );
-  const t = snap.totaal;
   const tabs = snap.tabs.filter((x) => !x.overgeslagen);
   const skipped = snap.tabs.filter((x) => x.overgeslagen);
   const important = snap.waarschuwingen.filter((w) => w.type !== "ongekleurd");
@@ -129,6 +132,36 @@ export default async function Controlepagina({ params }: { params: Promise<{ id:
           <p className="split"><span>Contactpogingen (WAFU, max 4 per lead)</span><strong>{t.pogingen}</strong></p>
         </section>
       </div>
+
+      <section className="card">
+        <h2>Correcties{corrections.length > 0 && <span className="tag tag--nieuw">{corrections.length}</span>}</h2>
+        {corrections.length > 0 && (
+          <div className="table-wrap" style={{ marginBottom: 12 }}>
+            <table className="table">
+              <thead>
+                <tr><th>Wat</th><th className="num">Origineel</th><th className="num">Was</th><th className="num">Nieuw</th><th>Opmerking</th><th>Wanneer</th></tr>
+              </thead>
+              <tbody>
+                {corrections.map((x, i) => (
+                  <tr key={i}>
+                    <td>{CORRECTABLE.find((k) => k.key === x.veld)?.label ?? x.veld}</td>
+                    <td className="num muted">{origineel[x.veld]}</td>
+                    <td className="num">{x.oud}</td>
+                    <td className="num strong">{x.nieuw}</td>
+                    <td>{x.opmerking}</td>
+                    <td className="muted small">{formatDateTime(x.at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {open ? (
+          <CorrectionForm id={s.id} velden={CORRECTABLE.map((k) => ({ key: k.key, label: k.label, huidig: t[k.key] }))} />
+        ) : (
+          <p className="muted small">{corrections.length ? "Correcties staan op slot." : "Geen correcties."}</p>
+        )}
+      </section>
 
       <section className="card">
         <h2>Waarschuwingen</h2>

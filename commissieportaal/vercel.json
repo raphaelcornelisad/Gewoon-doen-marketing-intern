@@ -1,9 +1,21 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "regions": ["fra1"],
+  "regions": [
+    "fra1"
+  ],
   "crons": [
-    { "path": "/api/cron/maandmail", "schedule": "0 7 14 * *" },
-    { "path": "/api/cron/maandmail", "schedule": "0 8 14 * *" }
+    {
+      "path": "/api/cron/maandmail",
+      "schedule": "0 7 14 * *"
+    },
+    {
+      "path": "/api/cron/maandmail",
+      "schedule": "0 8 14 * *"
+    },
+    {
+      "path": "/api/cron/keepalive",
+      "schedule": "17 4 * * *"
+    }
   ]
 }

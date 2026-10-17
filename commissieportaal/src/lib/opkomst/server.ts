@@ -10,6 +10,7 @@ import {
 } from "../attendance";
 import { matchClinic, type TabMatch } from "../clinic-match";
 import { calculateCommission, type Commission } from "../commission";
+import { effectiveCounts, type Correction } from "../corrections";
 import { env } from "../env";
 import { buildClinicMail } from "../mail/clinic";
 import { sendMail } from "../mail/resend";
@@ -133,7 +134,7 @@ export async function approveSubmission(id: string): Promise<ApproveResult> {
   const s = check(
     await sb
       .from("submissions")
-      .select("id, status, setter_id, period_id, snapshot_json, counts_json, settings_json, period:periods!inner(id, start, label)")
+      .select("id, status, setter_id, period_id, snapshot_json, counts_json, corrections_json, settings_json, period:periods!inner(id, start, label)")
       .eq("id", id)
       .single(),
   ) as unknown as {
@@ -143,10 +144,12 @@ export async function approveSubmission(id: string): Promise<ApproveResult> {
     period_id: string;
     snapshot_json: ParseResult;
     counts_json: { totaal: Counts };
+    corrections_json: Correction[] | null;
     settings_json: AppSettings;
     period: { id: string; start: string; label: string };
   };
   if (s.status === "vervangen") return { ok: false, message: "Deze indiening is vervangen door een nieuwere." };
+  const telling = effectiveCounts(s.counts_json.totaal, s.corrections_json);
 
   if (s.status !== "goedgekeurd") {
     const info = await opkomstInfo(s.setter_id, s.period.start, s.period_id);
@@ -164,7 +167,7 @@ export async function approveSubmission(id: string): Promise<ApproveResult> {
       );
       check(await sb.from("checklists").update({ locked: true }).eq("setter_id", s.setter_id).eq("period_id", info.prev.id));
     }
-    const commission = recalc(s.counts_json.totaal, s.settings_json, info.bron === "al_uitbetaald" ? 0 : info.aantal);
+    const commission = recalc(telling, s.settings_json, info.bron === "al_uitbetaald" ? 0 : info.aantal);
     check(
       await sb
         .from("submissions")
@@ -179,7 +182,7 @@ export async function approveSubmission(id: string): Promise<ApproveResult> {
     await sb
       .from("attendance")
       .upsert(
-        { setter_id: s.setter_id, period_id: s.period_id, max_count: s.counts_json.totaal.groen },
+        { setter_id: s.setter_id, period_id: s.period_id, max_count: telling.groen },
         { onConflict: "setter_id,period_id", ignoreDuplicates: true },
       ),
   );

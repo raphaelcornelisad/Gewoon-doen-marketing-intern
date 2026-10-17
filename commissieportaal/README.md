@@ -5,6 +5,15 @@ en zet alles klaar voor controle in de admin.
 
 - `/indienen` — indienpagina voor setters (mobiel-first)
 - `/bedankt` — bedankscherm, zonder bedragen
+- `/admin` — overzicht en controlepagina (inloggen via magic link, alleen ADMIN_EMAIL):
+  berekening, correcties, opkomstbonus, goedkeuren, afvinklijsten
+- `/kliniek/[token]` — afvinklijst voor de salon (Ja/Nee per lead, opslaan en indienen)
+- Cron: maandmail aan actieve setters op de 14e om 09:00 (Amsterdam), dagelijkse keep-alive
+
+**Afspraak voor setters:** tabnaam = volledige salonnaam (zoals in Notion), bij twee behandelingen
+"Salonnaam - behandeling". Salons zonder herkende naam krijgen geen afvinklijst.
+
+**Testmodus** (standaard aan, te wisselen op de controlepagina): mails aan klinieken gaan naar de admin.
 
 Stack: Next.js (App Router) op Vercel, Supabase (Postgres), Resend, Google Sheets API, Notion API.
 
