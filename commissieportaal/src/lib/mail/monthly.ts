@@ -21,6 +21,7 @@ export function buildMonthlyMail(naam: string, email: string, periode: PeriodRan
     link,
     ``,
     `Zorg dat je Google Sheet gedeeld is: Delen → Algemene toegang → Iedereen met de link → Lezer.`,
+    `Geef elk tabblad de volledige naam van de salon. Twee behandelingen? Gebruik "Salonnaam - behandeling", bijvoorbeeld "Babeau Huidinstituut - Laser".`,
     ``,
     `Groet,`,
     brand.naam,
@@ -33,7 +34,8 @@ export function buildMonthlyMail(naam: string, email: string, periode: PeriodRan
 <p style="margin:0 0 12px">Hoi ${esc(voornaam)},</p>
 <p style="margin:0 0 20px">De periode <strong>${esc(periode.label)}</strong> zit erop. Lever je leadlijst in via de knop hieronder.</p>
 <p style="margin:0 0 20px"><a href="${esc(link)}" style="display:inline-block;background:${C.primair};color:${C.wit};text-decoration:none;font-weight:700;padding:13px 20px;border-radius:8px">Leadlijst indienen</a></p>
-<p style="margin:0 0 20px;color:${C.tekstZacht};font-size:14px">Zorg dat je Google Sheet gedeeld is: Delen → Algemene toegang → Iedereen met de link → Lezer.</p>
+<p style="margin:0 0 8px;color:${C.tekstZacht};font-size:14px">Zorg dat je Google Sheet gedeeld is: Delen → Algemene toegang → Iedereen met de link → Lezer.</p>
+<p style="margin:0 0 20px;color:${C.tekstZacht};font-size:14px">Geef elk tabblad de volledige naam van de salon. Twee behandelingen? Gebruik "Salonnaam - behandeling", bijvoorbeeld "Babeau Huidinstituut - Laser".</p>
 <p style="margin:0">Groet,<br>${esc(brand.naam)}</p>
 </td></tr></table></td></tr></table></body></html>`;
   return { subject, text, html };

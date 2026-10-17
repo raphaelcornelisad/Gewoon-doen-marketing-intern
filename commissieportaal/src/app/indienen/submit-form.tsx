@@ -100,6 +100,10 @@ export function SubmitForm({ defaultEmail }: { defaultEmail: string }) {
             <span className="field-error">{error.message}</span>
           ))}
         {!isNotPublic && <span className="hint">Tip: deel je sheet via {NOT_PUBLIC_HINT}.</span>}
+        <span className="hint">
+          Geef elk tabblad de volledige naam van de salon. Twee behandelingen? Gebruik &quot;Salonnaam - behandeling&quot;,
+          bijvoorbeeld &quot;Babeau Huidinstituut - Laser&quot;.
+        </span>
       </div>
 
       <button className="button" type="submit" disabled={busy}>

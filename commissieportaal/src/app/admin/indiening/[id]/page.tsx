@@ -9,7 +9,7 @@ import { getSubmission, replacedVersions } from "@/lib/admin/queries";
 import { requireAdmin } from "@/lib/auth/session";
 import { countAnswers } from "@/lib/attendance";
 import { formatEuro } from "@/lib/commission";
-import { checklistsFor, checklistUrl, opkomstInfo, recalc } from "@/lib/opkomst/server";
+import { checklistsFor, checklistUrl, opkomstInfo, recalc, tabMatches } from "@/lib/opkomst/server";
 import type { AppSettings } from "@/lib/settings";
 import { db } from "@/lib/supabase/server";
 import type { Warning } from "@/lib/sheets/types";
@@ -32,11 +32,13 @@ export default async function Controlepagina({ params }: { params: Promise<{ id:
 
   const snap = s.snapshot_json;
   const open = s.status === "te_controleren";
-  const [opk, lists, settingsRow] = await Promise.all([
+  const [opk, lists, settingsRow, matches] = await Promise.all([
     opkomstInfo(s.setter.id, s.period.start, s.period.id),
     checklistsFor(s.setter.id, s.period.id),
     db().from("settings").select("clinic_mail_test_mode").eq("id", 1).maybeSingle(),
+    tabMatches(snap),
   ]);
+  const nietHerkend = matches.filter((m) => !m.clinic && m.groen > 0);
   const testmodus = (settingsRow.data as { clinic_mail_test_mode: boolean } | null)?.clinic_mail_test_mode ?? true;
   const settingsJson = (s as unknown as { settings_json: AppSettings }).settings_json;
   // Zolang de indiening open staat, rekenen we live met de actuele opkomst; daarna geldt het vastgezette bedrag.
@@ -196,6 +198,33 @@ export default async function Controlepagina({ params }: { params: Promise<{ id:
         </div>
         {skipped.length > 0 && (
           <p className="muted small">Overgeslagen: {skipped.map((x) => `${x.tab} (${x.reden})`).join(", ")}</p>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Salon per tab{nietHerkend.length > 0 && <span className="tag tag--nieuw">{nietHerkend.length} niet herkend</span>}</h2>
+        <p className="muted small">
+          Afspraak voor setters: tabnaam = volledige salonnaam, bij twee behandelingen &quot;Salonnaam - behandeling&quot;.
+        </p>
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr><th>Tab</th><th>Salon</th><th className="num">Groen</th><th>Herkend via</th></tr>
+            </thead>
+            <tbody>
+              {matches.map((m) => (
+                <tr key={m.tab}>
+                  <td>{m.tab}</td>
+                  <td className={m.clinic ? "" : "warn-text"}>{m.clinic?.naam ?? "Niet herkend"}</td>
+                  <td className="num">{m.groen}</td>
+                  <td className="muted small">{m.via === "naam" ? "salonnaam" : m.via === "koppeling" ? "oude koppeling" : "–"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {nietHerkend.length > 0 && (
+          <p className="small">Tabs zonder salon krijgen geen afvinklijst. Laat de setter de tab hernoemen en opnieuw indienen.</p>
         )}
       </section>
 

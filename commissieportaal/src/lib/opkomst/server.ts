@@ -8,6 +8,7 @@ import {
   type AttendanceRow,
   type ChecklistItem,
 } from "../attendance";
+import { matchClinic, type TabMatch } from "../clinic-match";
 import { calculateCommission, type Commission } from "../commission";
 import { env } from "../env";
 import { buildClinicMail } from "../mail/clinic";
@@ -66,6 +67,19 @@ export async function opkomstInfo(setterId: string, periodStart: string, current
   const [attendance, checklists] = await Promise.all([attendanceFor(setterId, prev.id), checklistsFor(setterId, prev.id)]);
   const r = opkomstVoorPeriode(attendance, checklists.map((c) => c.items_json), currentPeriodId);
   return { prev, attendance, checklists, ...r };
+}
+
+/** Per tab met leads: welke salon het systeem herkent (naam, of anders bestaande koppeling). */
+export async function tabMatches(snapshot: ParseResult): Promise<(TabMatch & { groen: number })[]> {
+  const [clinics, map] = await Promise.all([
+    db().from("clinics").select("id, naam"),
+    db().from("tab_clinic_map").select("tab_naam, clinic_id"),
+  ]);
+  const list = (check(clinics) ?? []) as { id: string; naam: string }[];
+  const koppeling = Object.fromEntries(((check(map) ?? []) as { tab_naam: string; clinic_id: string }[]).map((m) => [m.tab_naam, m.clinic_id]));
+  return snapshot.tabs
+    .filter((t) => !t.overgeslagen)
+    .map((t) => ({ ...matchClinic(t.tab, list, koppeling), groen: t.counts.groen }));
 }
 
 export function recalc(counts: Pick<Counts, "groen" | "geel" | "rood" | "ongekleurd">, settings: AppSettings, opkomst: number): Commission {
@@ -171,10 +185,10 @@ export async function approveSubmission(id: string): Promise<ApproveResult> {
   );
 
   // Afvinklijsten per kliniek.
-  const map = check(await sb.from("tab_clinic_map").select("tab_naam, clinic_id")) as { tab_naam: string; clinic_id: string }[];
+  const matches = await tabMatches(s.snapshot_json);
   const { perClinic, unmapped } = buildChecklistItems(
     s.snapshot_json,
-    Object.fromEntries(map.map((m) => [m.tab_naam, m.clinic_id])),
+    Object.fromEntries(matches.filter((m) => m.clinic).map((m) => [m.tab, m.clinic!.id])),
   );
   for (const [clinicId, items] of perClinic) {
     check(

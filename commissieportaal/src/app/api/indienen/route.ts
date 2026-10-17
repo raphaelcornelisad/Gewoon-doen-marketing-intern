@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { buildAdminReviewMail } from "@/lib/mail/admin-review";
 import { sendMail } from "@/lib/mail/resend";
+import { tabMatches } from "@/lib/opkomst/server";
 import { fetchSpreadsheet } from "@/lib/sheets/fetch";
 import { submitSheet } from "@/lib/submissions/submit";
 import { supabaseSubmissionStore } from "@/lib/submissions/supabase-store";
@@ -32,7 +33,11 @@ export async function POST(req: Request) {
     }
     // Controlemail aan de admin. Mislukt de mail, dan blijft de indiening gewoon staan.
     try {
+      const nietHerkend = (await tabMatches(result.details.parsed).catch(() => []))
+        .filter((m) => !m.clinic && m.groen > 0)
+        .map((m) => ({ tab: m.tab, groen: m.groen }));
       const mail = buildAdminReviewMail(result.details, {
+        nietHerkend,
         submissionId: result.submissionId,
         appUrl: env("APP_URL"),
         vervangen: result.vervangen,

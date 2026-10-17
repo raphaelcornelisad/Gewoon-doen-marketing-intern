@@ -8,6 +8,8 @@ export interface AdminReviewOptions {
   appUrl: string;
   vervangen: boolean;
   nieuweSetter: boolean;
+  /** Tabs met groene leads waarvan de salon niet is herkend */
+  nietHerkend?: { tab: string; groen: number }[];
 }
 
 const esc = (s: string | number) =>
@@ -99,6 +101,7 @@ ${tabs
 </table>
 ${skipped.length ? `<p style="margin:8px 0 0;color:${C.tekstZacht};font-size:13px">Overgeslagen: ${skipped.map((x) => `${esc(x.tab)} (${esc(x.reden ?? "")})`).join(", ")}</p>` : ""}
 
+${o.nietHerkend?.length ? `<h2 style="font-size:16px;margin:20px 0 6px;color:${C.primair}">Salon niet herkend (${o.nietHerkend.length})</h2><p style="margin:0 0 6px">Deze tabs krijgen geen afvinklijst. Tabnaam moet de volledige salonnaam zijn (bijv. "Babeau Huidinstituut - Laser").</p><ul style="margin:0;padding-left:18px">${o.nietHerkend.map((u) => `<li>${esc(u.tab)} (${u.groen} groen)</li>`).join("")}</ul>` : ""}
 <h2 style="font-size:16px;margin:20px 0 6px">Waarschuwingen (${warnings.length})</h2>
 ${
   warnings.length
@@ -136,6 +139,9 @@ ${
     ),
     ...(skipped.length ? [`Overgeslagen: ${skipped.map((x) => x.tab).join(", ")}`] : []),
     ``,
+    ...(o.nietHerkend?.length
+      ? [`SALON NIET HERKEND (${o.nietHerkend.length})`, ...o.nietHerkend.map((u) => `- ${u.tab} (${u.groen} groen)`), ``]
+      : []),
     `WAARSCHUWINGEN (${warnings.length})`,
     ...(warnings.length ? warnings.map((w) => `- ${WARNING_LABEL[w.type]} · ${w.tab}: ${w.bericht}`) : ["Geen."]),
     ``,
