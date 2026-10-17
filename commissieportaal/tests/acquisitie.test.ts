@@ -111,3 +111,16 @@ describe("acquisitie: periodes", () => {
     expect(acqPeriodFor(new Date(d))).toMatchObject({ start, eind });
   });
 });
+
+import { periodsFor } from "@/lib/acquisitie/period";
+describe("acquisitie: periodelijst", () => {
+  it("nieuwste eerst, terug tot de afwijkende eerste periode", () => {
+    expect(periodsFor({ start_datum: "2026-10-12" }, new Date("2027-01-20T10:00:00Z")).map((p) => `${p.start}/${p.eind}`)).toEqual([
+      "2027-01-14/2027-02-14",
+      "2026-12-14/2027-01-14",
+      "2026-11-14/2026-12-14",
+      "2026-10-12/2026-11-14",
+    ]);
+    expect(periodsFor({ start_datum: "2026-10-12" }, new Date("2026-10-17T10:00:00Z")).map((p) => p.start)).toEqual(["2026-10-12"]);
+  });
+});
