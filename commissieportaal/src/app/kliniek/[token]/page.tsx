@@ -16,7 +16,7 @@ export default async function KliniekPage({ params }: { params: Promise<{ token:
     <ClinicChecklist
       token={token}
       kliniek={c.clinic.naam}
-      periode={c.period.label}
+      periode={`Afspraken ingepland van ${c.period.label}`}
       items={items}
       locked={c.locked}
       ingediend={!!c.submitted_at}

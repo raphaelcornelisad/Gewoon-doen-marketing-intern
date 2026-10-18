@@ -6,6 +6,7 @@ export function AdminBar({ email }: { email: string }) {
       <span className="admin-bar__links">
         <Link href="/admin">Salonsetters</Link>
         <Link href="/admin/acquisitie">Acquisitie</Link>
+        <Link href="/admin/reactivatie">Reactivatie</Link>
       </span>
       <span className="admin-bar__right">
         <span className="muted">{email}</span>

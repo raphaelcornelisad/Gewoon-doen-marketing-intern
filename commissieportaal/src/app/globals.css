@@ -55,6 +55,8 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
   color: var(--tekst);
   width: 100%;
 }
+.field textarea { font: inherit; padding: 12px 14px; border: 1px solid var(--rand); border-radius: 8px; resize: vertical; min-width: 0; }
+.field textarea:focus { outline: none; border-color: var(--primair); box-shadow: 0 0 0 3px var(--primair-zacht); }
 .field input:focus { outline: none; border-color: var(--primair); box-shadow: 0 0 0 3px var(--primair-zacht); }
 .field input[aria-invalid="true"] { border-color: var(--primair); }
 .hint { font-size: 13px; color: var(--tekst-zacht); }

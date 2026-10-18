@@ -12,7 +12,13 @@ export function ClinicChecklist(p: {
   items: Item[];
   locked: boolean;
   ingediend: boolean;
+  /** Optioneel: andere teksten/route, bv. voor reactivatie */
+  apiBase?: string;
+  eyebrow?: string;
+  intro?: string;
+  telLabel?: string;
 }) {
+  const apiBase = p.apiBase ?? "/api/kliniek";
   const [answers, setAnswers] = useState<Record<string, boolean | null>>(
     Object.fromEntries(p.items.map((i) => [i.id, i.verschenen])),
   );
@@ -46,7 +52,7 @@ export function ClinicChecklist(p: {
       return;
     }
     setBusy(true);
-    const res = await fetch(`/api/kliniek/${p.token}`, {
+    const res = await fetch(`${apiBase}/${p.token}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ antwoorden: answers, indienen }),
@@ -61,15 +67,15 @@ export function ClinicChecklist(p: {
   return (
     <div className="clinic">
       <section className="hero">
-        <p className="eyebrow">Opkomst bevestigen</p>
+        <p className="eyebrow">{p.eyebrow ?? "Opkomst bevestigen"}</p>
         <h1>{p.kliniek}</h1>
-        <p className="lead">Afspraken ingepland van {p.periode}</p>
+        {p.periode && <p className="lead">{p.periode}</p>}
       </section>
 
       {p.locked ? (
         <div className="alert">Deze lijst is afgesloten. Bedankt voor het invullen!</div>
       ) : (
-        <p>Geef per klant aan of ze op de afspraak is verschenen. Je kunt tussendoor opslaan en later verder gaan. Klik op Indienen als je klaar bent.</p>
+        <p>{p.intro ?? "Geef per klant aan of ze op de afspraak is verschenen. Je kunt tussendoor opslaan en later verder gaan. Klik op Indienen als je klaar bent."}</p>
       )}
 
       <div className="progress" aria-live="polite">
@@ -78,14 +84,14 @@ export function ClinicChecklist(p: {
         </div>
         <div className="progress__label">
           <span><strong>{done}</strong> van {p.items.length} ingevuld</span>
-          <span><strong>{yes}</strong> verschenen</span>
+          <span><strong>{yes}</strong> {p.telLabel ?? "verschenen"}</span>
         </div>
       </div>
 
       {groups.map(([campagne, items]) => (
         <section key={campagne} className="clinic-group">
           <h2>
-            {campagne} <span>{items.length} afspraken</span>
+            {campagne} <span>{items.length} {items.length === 1 ? "klant" : "klanten"}</span>
           </h2>
           <ul className="clinic-rows">
             {items.map((i) => (
