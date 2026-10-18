@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { brand } from "@/config/brand";
 
 type Item = { id: string; naam: string; campagne: string; verschenen: boolean | null };
 
@@ -100,7 +101,7 @@ export function ClinicChecklist(p: {
         </section>
       ))}
 
-      <p className="muted small">Vragen? Mail naar commissie@gewoondoenmarketing.nl.</p>
+      <p className="muted small">Vragen? Mail naar {brand.contactEmail}.</p>
 
       {!p.locked && (
         <div className="savebar">

@@ -17,6 +17,8 @@ export const brand = {
     vlak: "#F7F7F7",
   },
   mailDomein: "gewoondoenmarketing.nl",
+  /** Echte mailbox voor vragen en antwoorden. Het afzenderadres (MAIL_FROM) is alleen om te versturen. */
+  contactEmail: "raphaelcornelis@gewoondoenmarketing.nl",
 };
 
 /** CSS-variabelen voor de hele app, afgeleid van de kleuren hierboven. */
