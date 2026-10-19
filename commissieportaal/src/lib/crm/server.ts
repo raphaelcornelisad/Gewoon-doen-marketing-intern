@@ -70,6 +70,7 @@ export interface Contact {
   stad: string | null;
   provincie: string | null;
   behandelingen: string[];
+  tags: string[];
   bron: string;
   eigenaar_id: string | null;
   created_at: string;
@@ -105,7 +106,7 @@ export interface Activity {
   created_at: string;
 }
 
-const CONTACT_COLS = "id, salon_naam, contactpersoon, telefoon, email, website, stad, provincie, behandelingen, bron, eigenaar_id, created_at, updated_at";
+const CONTACT_COLS = "id, salon_naam, contactpersoon, telefoon, email, website, stad, provincie, behandelingen, tags, bron, eigenaar_id, created_at, updated_at";
 const OPP_COLS = "id, contact_id, pijplijn, fase, waarde_cents, setter_id, invitee_uri, afspraak_op, fase_sinds, updated_at";
 
 async function log(a: Omit<Activity, "id" | "created_at" | "setter_id" | "pijplijn" | "van" | "naar" | "tekst"> & Partial<Activity> & { contact_id: string }) {
@@ -122,6 +123,7 @@ export interface BoardFilter {
   stad?: string;
   provincie?: string;
   setter?: string; // id, of "geen"
+  tag?: string;
   mijn?: boolean;
 }
 
@@ -139,6 +141,7 @@ export function filterCards(cards: Card[], f: BoardFilter, user: CrmUser): Card[
     const k = c.contact;
     if (f.mijn && user.setter && k.eigenaar_id !== user.setter.id && c.setter_id !== user.setter.id) return false;
     if (f.behandeling && !k.behandelingen.includes(f.behandeling)) return false;
+    if (f.tag && !k.tags.includes(f.tag)) return false;
     if (f.stad && k.stad !== f.stad) return false;
     if (f.provincie && (f.provincie === "onbekend" ? !!k.provincie : k.provincie !== f.provincie)) return false;
     if (f.setter) {
@@ -154,9 +157,16 @@ export function filterOptions(cards: Card[]) {
   const set = (vals: (string | null)[]) => [...new Set(vals.filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, "nl"));
   return {
     behandelingen: set(cards.flatMap((c) => c.contact.behandelingen)),
+    tags: set(cards.flatMap((c) => c.contact.tags)),
     steden: set(cards.map((c) => c.contact.stad)),
     provincies: set(cards.map((c) => c.contact.provincie)),
   };
+}
+
+/** Alle gebruikte tags (voor suggesties). */
+export async function allTags(): Promise<string[]> {
+  const rows = await all<{ tags: string[] }>((f, t) => db().from("crm_contacts").select("tags").neq("tags", "{}").order("id").range(f, t));
+  return [...new Set(rows.flatMap((r) => r.tags))].sort((a, b) => a.localeCompare(b, "nl"));
 }
 
 // ---------- Contact ----------
@@ -298,6 +308,19 @@ export interface ContactInput {
   provincie?: string;
   behandelingen?: string;
   eigenaar_id?: string | null;
+  tags?: string[];
+  /** Setter pakt de lead op (wordt eigenaar). */
+  claim?: boolean;
+}
+
+export function cleanTags(v: unknown): string[] {
+  if (!Array.isArray(v)) throw new CrmError("Ongeldige tags.");
+  const out: string[] = [];
+  for (const t of v) {
+    const s = String(t).trim().replace(/\s+/g, " ").slice(0, 40);
+    if (s && !out.some((x) => x.toLowerCase() === s.toLowerCase())) out.push(s);
+  }
+  return out.slice(0, 20);
 }
 
 function cleanInput(i: ContactInput) {
@@ -330,7 +353,14 @@ export async function updateContact(user: CrmUser, id: string, input: ContactInp
   const c = check(await db().from("crm_contacts").select(CONTACT_COLS).eq("id", id).maybeSingle()) as Contact | null;
   if (!c) throw new CrmError("Onbekende lead.", 404);
   if (!canEditOutbound(c, user)) throw new CrmError("Deze lead is al opgepakt door een andere setter.", 403);
+  if (input.claim) {
+    if (!user.setter) throw new CrmError("Alleen setters pakken leads op.");
+    await claim(c, user);
+    await log({ contact_id: id, ...actor(user), type: "gegevens", tekst: "Lead opgepakt" });
+    return;
+  }
   const data = cleanInput(input);
+  if (input.tags !== undefined) data.tags = cleanTags(input.tags);
   if (input.eigenaar_id !== undefined) {
     if (user.rol !== "admin") throw new CrmError("Alleen de admin wijst leads toe.", 403);
     data.eigenaar_id = input.eigenaar_id || null;
@@ -340,7 +370,8 @@ export async function updateContact(user: CrmUser, id: string, input: ContactInp
   } catch (e) {
     throw dupMessage(e);
   }
-  await log({ contact_id: id, ...actor(user), type: "gegevens", tekst: "Gegevens aangepast" });
+  const wat = input.tags !== undefined && Object.keys(data).length === 1 ? `Tags: ${(data.tags as string[]).join(", ") || "geen"}` : input.eigenaar_id !== undefined ? "Eigenaar aangepast" : "Gegevens aangepast";
+  await log({ contact_id: id, ...actor(user), type: "gegevens", tekst: wat });
 }
 
 export async function createContact(user: CrmUser, input: ContactInput) {

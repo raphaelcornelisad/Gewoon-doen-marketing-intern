@@ -9,7 +9,7 @@ export function Filters({
 }: {
   action: string;
   f: BoardFilter;
-  opties: { behandelingen: string[]; steden: string[]; provincies: string[] };
+  opties: { behandelingen: string[]; steden: string[]; provincies: string[]; tags: string[] };
   setters?: { id: string; naam: string }[];
   toonMijn: boolean;
 }) {
@@ -20,6 +20,12 @@ export function Filters({
         <option value="">Alle behandelingen</option>
         {opties.behandelingen.map((b) => <option key={b}>{b}</option>)}
       </select>
+      {opties.tags.length > 0 && (
+        <select name="tag" defaultValue={f.tag ?? ""} aria-label="Tag">
+          <option value="">Alle tags</option>
+          {opties.tags.map((b) => <option key={b}>{b}</option>)}
+        </select>
+      )}
       <select name="provincie" defaultValue={f.provincie ?? ""} aria-label="Provincie">
         <option value="">Alle provincies</option>
         {opties.provincies.map((b) => <option key={b}>{b}</option>)}

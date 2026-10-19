@@ -13,9 +13,10 @@ export type SP = Promise<Record<string, string | undefined>>;
 export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn; searchParams: SP }) {
   const user = await requireCrmUser();
   const sp = await searchParams;
-  const f: BoardFilter = { q: sp.q, behandeling: sp.behandeling, stad: sp.stad, provincie: sp.provincie, setter: sp.setter, mijn: sp.mijn === "1" };
+  const f: BoardFilter = { q: sp.q, tag: sp.tag, behandeling: sp.behandeling, stad: sp.stad, provincie: sp.provincie, setter: sp.setter, mijn: sp.mijn === "1" };
   const [alle, setters] = await Promise.all([loadCards(pijplijn, user), acqSetters()]);
   const naam = new Map(setters.map((s) => [s.id, s.naam]));
+  const opties = filterOptions(alle);
   const cards = filterCards(alle, f, user);
   const path = `/crm/${pijplijn}`;
 
@@ -28,11 +29,14 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       fase: c.fase,
       salon: k.salon_naam,
       sub: [k.contactpersoon, k.stad && (k.provincie ? `${k.stad} (${k.provincie})` : k.stad)].filter(Boolean).join(" · "),
+      telefoon: k.telefoon,
       behandelingen: k.behandelingen,
+      tags: k.tags,
       waarde: c.waarde_cents ? formatEuro(c.waarde_cents) : null,
-      tag: wie ? (naam.get(wie) ?? null) : null,
+      wie: wie ? { id: wie, naam: naam.get(wie) ?? "?" } : null,
       afspraak: pijplijn === "sales" ? afspraakTekst(c.afspraak_op) : null,
       vergrendeld: pijplijn === "sales" ? user.rol !== "admin" : user.rol === "setter" && !!k.eigenaar_id && k.eigenaar_id !== user.setter.id,
+      bewerkbaar: user.rol === "admin" || !k.eigenaar_id || k.eigenaar_id === user.setter.id,
     };
   });
   const waardes = Object.fromEntries(
@@ -59,9 +63,17 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
         </div>
         {pijplijn === "outbound" && <Link href="/crm/nieuw" className="button button--small">+ Lead toevoegen</Link>}
       </div>
-      <Filters action={path} f={f} opties={filterOptions(alle)} setters={user.rol === "admin" ? setters : undefined} toonMijn={user.rol === "setter" && pijplijn === "outbound"} />
+      <Filters action={path} f={f} opties={opties} setters={user.rol === "admin" ? setters : undefined} toonMijn={user.rol === "setter" && pijplijn === "outbound"} />
       <p className="small muted">{cards.length} van {alle.length} leads</p>
-      <Board fases={FASES[pijplijn]} cards={board} waardes={waardes} />
+      <Board
+        pijplijn={pijplijn}
+        fases={FASES[pijplijn]}
+        cards={board}
+        waardes={waardes}
+        alleTags={opties.tags}
+        setters={user.rol === "admin" ? setters.filter((x) => x.actief).map((x) => ({ id: x.id, naam: x.naam })) : null}
+        rol={user.rol}
+      />
     </>
   );
 }

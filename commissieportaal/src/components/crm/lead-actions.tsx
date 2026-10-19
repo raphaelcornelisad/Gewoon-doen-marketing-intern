@@ -26,76 +26,9 @@ function useAction() {
 
 const Msg = ({ m }: { m: { ok: boolean; tekst: string } | null }) => (m ? <span className={`small ${m.ok ? "muted" : "field-error"}`}>{m.tekst}</span> : null);
 
-export function StageButtons({ oppId, fase, fases, disabled }: { oppId: string; fase: string; fases: { key: string; label: string }[]; disabled: boolean }) {
-  const a = useAction();
-  return (
-    <div className="crm-form">
-      <div className="crm-stages" role="group" aria-label="Fase">
-        {fases.map((f) => (
-          <button key={f.key} type="button" className="crm-stage" aria-pressed={f.key === fase} disabled={disabled || a.busy} onClick={() => a.run(`/api/crm/opp/${oppId}`, { fase: f.key }, `Naar ${f.label}.`)}>
-            {f.label}
-          </button>
-        ))}
-      </div>
-      <Msg m={a.msg} />
-    </div>
-  );
-}
 
-export function WaardeForm({ oppId, waarde, disabled }: { oppId: string; waarde: string; disabled: boolean }) {
-  const a = useAction();
-  const [v, setV] = useState(waarde);
-  return (
-    <form
-      className="crm-form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        a.run(`/api/crm/opp/${oppId}`, { waarde: v });
-      }}
-    >
-      <label>
-        Waarde (€)
-        <span className="inline-form__row">
-          <input inputMode="decimal" value={v} onChange={(e) => setV(e.target.value)} placeholder="bv. 1.500" disabled={disabled} />
-          <button type="submit" className="button button--small" disabled={disabled || a.busy}>Opslaan</button>
-        </span>
-      </label>
-      <Msg m={a.msg} />
-    </form>
-  );
-}
 
-export function SetterSelect({ oppId, value, setters }: { oppId: string; value: string; setters: { id: string; naam: string }[] }) {
-  const a = useAction();
-  return (
-    <label className="crm-form">
-      Setter-tag (ingepland door)
-      <select defaultValue={value} disabled={a.busy} onChange={(e) => a.run(`/api/crm/opp/${oppId}`, { setterId: e.target.value || null })}>
-        <option value="">Geen</option>
-        {setters.map((s) => (
-          <option key={s.id} value={s.id}>{s.naam}</option>
-        ))}
-      </select>
-      <Msg m={a.msg} />
-    </label>
-  );
-}
 
-export function OwnerSelect({ contactId, value, setters }: { contactId: string; value: string; setters: { id: string; naam: string }[] }) {
-  const a = useAction();
-  return (
-    <label className="crm-form">
-      Eigenaar (outbound)
-      <select defaultValue={value} disabled={a.busy} onChange={(e) => a.run(`/api/crm/contact/${contactId}`, { eigenaar_id: e.target.value || null })}>
-        <option value="">Niemand (vrij op te pakken)</option>
-        {setters.map((s) => (
-          <option key={s.id} value={s.id}>{s.naam}</option>
-        ))}
-      </select>
-      <Msg m={a.msg} />
-    </label>
-  );
-}
 
 export interface ContactFields {
   salon_naam: string;
@@ -205,5 +138,121 @@ export function SyncButton() {
       </button>{" "}
       <Msg m={a.msg} />
     </span>
+  );
+}
+
+export function StatusSelect({ oppId, fase, fases, disabled, label = "Status" }: { oppId: string; fase: string; fases: { key: string; label: string }[]; disabled: boolean; label?: string }) {
+  const a = useAction();
+  const [v, setV] = useState(fase);
+  return (
+    <label className="crm-field">
+      {label}
+      <select
+        value={v}
+        disabled={disabled || a.busy}
+        onChange={async (e) => {
+          const oud = v;
+          setV(e.target.value);
+          const r = await a.run(`/api/crm/opp/${oppId}`, { fase: e.target.value }, "Status aangepast.");
+          if (!r.ok) setV(oud);
+        }}
+      >
+        {fases.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
+      </select>
+      <Msg m={a.msg} />
+    </label>
+  );
+}
+
+export function WaardeField({ oppId, cents, disabled }: { oppId: string; cents: number | null; disabled: boolean }) {
+  const a = useAction();
+  const start = cents ? (cents / 100).toLocaleString("nl-NL", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "";
+  const [v, setV] = useState(start);
+  return (
+    <label className="crm-field">
+      Waarde
+      <span className="crm-euro">
+        <span aria-hidden="true">€</span>
+        <input
+          inputMode="decimal"
+          value={v}
+          placeholder="0,00"
+          disabled={disabled}
+          onChange={(e) => setV(e.target.value)}
+          onBlur={() => v !== start && a.run(`/api/crm/opp/${oppId}`, { waarde: v })}
+          onKeyDown={(e) => e.key === "Enter" && (e.currentTarget as HTMLInputElement).blur()}
+        />
+      </span>
+      <Msg m={a.msg} />
+    </label>
+  );
+}
+
+export function OwnerField({ contactId, oppId, value, setters, label, soort }: { contactId: string; oppId?: string; value: string; setters: { id: string; naam: string }[]; label: string; soort: "eigenaar" | "setter" }) {
+  const a = useAction();
+  return (
+    <label className="crm-field">
+      {label}
+      <select
+        defaultValue={value}
+        disabled={a.busy}
+        onChange={(e) =>
+          soort === "setter"
+            ? a.run(`/api/crm/opp/${oppId}`, { setterId: e.target.value || null })
+            : a.run(`/api/crm/contact/${contactId}`, { eigenaar_id: e.target.value || null })
+        }
+      >
+        <option value="">Niet toegewezen</option>
+        {setters.map((s) => <option key={s.id} value={s.id}>{s.naam}</option>)}
+      </select>
+      <Msg m={a.msg} />
+    </label>
+  );
+}
+
+export function ClaimButton({ contactId }: { contactId: string }) {
+  const a = useAction();
+  return (
+    <span>
+      <button type="button" className="button button--small" disabled={a.busy} onClick={() => a.run(`/api/crm/contact/${contactId}`, { claim: true }, "Opgepakt.")}>Deze lead oppakken</button>{" "}
+      <Msg m={a.msg} />
+    </span>
+  );
+}
+
+export function EditableContact(props: { contactId: string; initial: ContactFields; disabled: boolean; provincies: string[] }) {
+  const [bewerken, setBewerken] = useState(false);
+  const v = props.initial;
+  const rijen: [string, string][] = [
+    ["Salonnaam", v.salon_naam],
+    ["Contactpersoon", v.contactpersoon],
+    ["Telefoon", v.telefoon],
+    ["E-mail", v.email],
+    ["Website", v.website],
+    ["Stad", v.stad],
+    ["Provincie", v.provincie],
+    ["Behandelingen", v.behandelingen],
+  ];
+  return (
+    <div className="crm-form">
+      <div className="crm-toolbar">
+        <strong>Contactgegevens</strong>
+        {!props.disabled && (
+          <button type="button" className="linkbutton" onClick={() => setBewerken(!bewerken)}>{bewerken ? "Sluiten" : "✎ Bewerken"}</button>
+        )}
+      </div>
+      {bewerken ? (
+        <ContactForm contactId={props.contactId} initial={props.initial} provincies={props.provincies} />
+      ) : (
+        <dl className="crm-kv">
+          {rijen.map(([k, val]) => (
+            <div key={k} style={{ display: "contents" }}>
+              <dt>{k}</dt>
+              <dd>{val || <span className="muted">–</span>}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </div>
   );
 }
