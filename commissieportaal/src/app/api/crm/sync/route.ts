@@ -1,15 +1,15 @@
-import { syncCalendly } from "@/lib/acquisitie/server";
 import { crmRoute } from "@/lib/crm/api";
-import { CrmError, linkCalendly } from "@/lib/crm/server";
+import { herverwerkMislukt, syncCalendlyCrm } from "@/lib/crm/calendly";
+import { CrmError } from "@/lib/crm/server";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   return crmRoute(req, async (user) => {
     if (user.rol !== "admin") throw new CrmError("Alleen de admin.", 403);
-    await syncCalendly();
-    const r = await linkCalendly();
-    return { message: `Calendly bijgewerkt: ${r.gekoppeld} afspraken gekoppeld, ${r.aangemaakt} nieuwe leads.` };
+    const h = await herverwerkMislukt();
+    const r = await syncCalendlyCrm();
+    return { message: `Calendly gesynchroniseerd: ${r.invitees} afspraken gecontroleerd. Mislukte meldingen opnieuw: ${h.ok}/${h.geprobeerd}.` };
   });
 }

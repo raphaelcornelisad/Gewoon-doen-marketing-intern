@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon, initialen, waLink } from "./icons";
+import { FaseVenster } from "./acties";
 import { post, QuickNote, Sheet, TagEditor } from "./sheet";
 
 export interface BoardCard {
@@ -19,6 +20,7 @@ export interface BoardCard {
   /** Eigenaar (outbound) of setter-tag (sales) */
   wie: { id: string; naam: string } | null;
   afspraak: string | null;
+  belpogingen: number;
   /** Fase mag niet worden aangepast door deze gebruiker */
   vergrendeld: boolean;
   /** Gegevens (tags/notitie) mogen worden aangepast */
@@ -69,11 +71,9 @@ export function Board({
     }
   }
 
-  async function eigenaar(card: BoardCard, setterId: string | null | "claim") {
+  async function eigenaar(card: BoardCard, setterId: string | null) {
     const r =
-      setterId === "claim"
-        ? await post(`/api/crm/contact/${card.contactId}`, { claim: true })
-        : pijplijn === "sales"
+      pijplijn === "sales"
           ? await post(`/api/crm/opp/${card.id}`, { setterId })
           : await post(`/api/crm/contact/${card.contactId}`, { eigenaar_id: setterId });
     if (!r.ok) setFout(r.message ?? "Mislukt.");
@@ -129,9 +129,13 @@ export function Board({
                         {c.wie ? initialen(c.wie.naam) : <Icon name="user" size={18} />}
                       </button>
                     </div>
+                    <div className="crm-card__eigenaar">
+                      <span className={`crm-label${c.wie ? "" : " crm-label--leeg"}`}>{c.wie ? c.wie.naam : pijplijn === "sales" ? "Geen setter" : "Niet toegewezen"}</span>
+                    </div>
                     <Link href={`/crm/lead/${c.contactId}`} className="crm-card__body">
                       {c.sub && <span className="small muted">{c.sub}</span>}
-                      {c.afspraak && <span className="small">📅 {c.afspraak}</span>}
+                      {c.afspraak && <span className="small crm-card__actie">{c.afspraak}</span>}
+                      {c.belpogingen > 0 && <span className="small muted">{c.belpogingen}× gebeld</span>}
                       {(c.behandelingen.length > 0 || c.tags.length > 0) && (
                         <span className="crm-chips">
                           {c.tags.map((t) => <span key={`t-${t}`} className="crm-chip crm-chip--tag">{t}</span>)}
@@ -160,26 +164,7 @@ export function Board({
         })}
       </div>
 
-      {paneel?.soort === "fase" && (
-        <Sheet titel={`Fase · ${paneel.card.salon}`} onClose={sluit}>
-          <div className="crm-sheet__list">
-            {fases.map((f) => (
-              <button
-                key={f.key}
-                type="button"
-                className="crm-stage"
-                aria-pressed={paneel.card.fase === f.key}
-                onClick={() => {
-                  move(paneel.card.id, f.key);
-                  sluit();
-                }}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </Sheet>
-      )}
+      {paneel?.soort === "fase" && <FaseVenster oppId={paneel.card.id} fase={paneel.card.fase} fases={fases} pijplijn={pijplijn} onSluit={sluit} />}
       {paneel?.soort === "tags" && (
         <Sheet titel={`Tags · ${paneel.card.salon}`} onClose={sluit}>
           <TagEditor contactId={paneel.card.contactId} tags={paneel.card.tags} alle={alleTags} />
@@ -205,7 +190,10 @@ export function Board({
             </div>
           )}
           {rol === "setter" && pijplijn === "outbound" && !paneel.card.wie && (
-            <button type="button" className="button button--small" onClick={() => eigenaar(paneel.card, "claim")}>Deze lead oppakken</button>
+            <>
+              <p className="small muted" style={{ margin: 0 }}>Een lead wordt van jou na een geregistreerde belpoging.</p>
+              <Link href={`/crm/bellen?lead=${paneel.card.contactId}`} className="button button--small">Deze lead bellen</Link>
+            </>
           )}
         </Sheet>
       )}

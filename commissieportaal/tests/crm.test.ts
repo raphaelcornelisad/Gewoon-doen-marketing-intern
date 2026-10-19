@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dedupeLeads, normPhone, parseEuro, parseLeadSheet, splitBehandelingen } from "@/lib/crm/core";
+import { automatischVooruit, dedupeLeads, domeinVan, normPhone, parseCsv, parseEuro, parseLeadRows, parseLeadSheet, splitBehandelingen, vulTemplate } from "@/lib/crm/core";
 import { provincieVoor } from "@/lib/crm/provincies";
 import type { ApiSpreadsheet } from "@/lib/sheets/types";
 
@@ -37,7 +37,7 @@ describe("crm core", () => {
   });
 
   it("ontdubbelt op telefoon, e-mail of naam+stad", () => {
-    const base = { contactpersoon: null, telefoon: null, website: null, provincie: null, behandelingen: [] };
+    const base = { contactpersoon: null, telefoon: null, website: null, domein: null, adres: null, postcode: null, provincie: null, type_bedrijf: null, behandelingen: [], bron_url: null, extern_id: null };
     const r = dedupeLeads([
       { ...base, salon_naam: "A", telefoon_norm: "+31611111111", email: null, stad: "X" },
       { ...base, salon_naam: "A2", telefoon_norm: "+31611111111", email: null, stad: "Y" },
@@ -55,5 +55,24 @@ describe("crm core", () => {
     expect(parseEuro("€ 900")).toBe(90000);
     expect(parseEuro("1,250")).toBe(125000);
     expect(parseEuro("abc")).toBeNull();
+  });
+
+  it("leest een Outscraper-CSV en een Apify-CSV", () => {
+    const out = parseLeadRows(parseCsv('name,full_address,city,postal_code,phone,site,type,subtypes,email_1,place_id,location_link\n"Huid & Zo","Dorpsstraat 1, 3511 AA Utrecht",Utrecht,3511 AA,+31 30 123 4567,https://www.huidenzo.nl/,Schoonheidssalon,"Laser, Huidverbetering",info@huidenzo.nl,ChIJ123,https://maps.google.com/?cid=1\n'), "csv");
+    expect(out.leads[0]).toMatchObject({ salon_naam: "Huid & Zo", telefoon_norm: "+31301234567", domein: "huidenzo.nl", email: "info@huidenzo.nl", type_bedrijf: "Schoonheidssalon", behandelingen: ["Laser", "Huidverbetering"], extern_id: "ChIJ123", provincie: "Utrecht", postcode: "3511 AA" });
+    const apify = parseLeadRows(parseCsv("title;city;phone;website;categoryName;url\nSkin Lab;Amsterdam;020 1234567;skinlab.nl;Huidkliniek;https://www.google.com/maps/place/x\n"), "csv");
+    expect(apify.leads[0]).toMatchObject({ salon_naam: "Skin Lab", domein: "skinlab.nl", type_bedrijf: "Huidkliniek", provincie: "Noord-Holland", bron_url: "https://www.google.com/maps/place/x" });
+  });
+
+  it("domein negeert social media en www", () => {
+    expect(domeinVan("https://www.Babeau.nl/laser")).toBe("babeau.nl");
+    expect(domeinVan("instagram.com/babeau")).toBeNull();
+  });
+
+  it("vult templates en schuift sales alleen automatisch vooruit", () => {
+    expect(vulTemplate("Hoi {{voornaam}}, groet {{setter}}", { setter: "Mireille" })).toBe("Hoi, groet Mireille");
+    expect(automatischVooruit("kennismaking", "salesgesprek")).toBe(true);
+    expect(automatischVooruit("geaccepteerd", "salesgesprek")).toBe(false);
+    expect(automatischVooruit("salesgesprek", "ingepland")).toBe(false);
   });
 });

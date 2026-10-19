@@ -15,7 +15,7 @@ export default async function Nieuw() {
       <h1>Lead toevoegen</h1>
       <p className="lead">De lead komt in Outbound bij Nieuw{user.setter ? " en staat op jouw naam" : ""}.</p>
       <section className="card" style={{ maxWidth: 640 }}>
-        <ContactForm provincies={PROVINCIES} initial={{ salon_naam: "", contactpersoon: "", telefoon: "", email: "", website: "", stad: "", provincie: "", behandelingen: "" }} />
+        <ContactForm provincies={PROVINCIES} initial={{ salon_naam: "", contactpersoon: "", telefoon: "", email: "", website: "", adres: "", postcode: "", stad: "", provincie: "", type_bedrijf: "", behandelingen: "" }} />
       </section>
     </>
   );

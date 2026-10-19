@@ -1,9 +1,9 @@
 import { crmRoute } from "@/lib/crm/api";
-import { importSheet } from "@/lib/crm/server";
+import { importLeads } from "@/lib/crm/server";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
-  return crmRoute<{ url?: string }>(req, async (user, b) => importSheet(user, String(b.url ?? "")));
+  return crmRoute<{ url?: string; csv?: string; bestandsnaam?: string }>(req, async (user, b) => importLeads(user, { url: b.url, csv: b.csv?.slice(0, 15_000_000), bestandsnaam: b.bestandsnaam }));
 }

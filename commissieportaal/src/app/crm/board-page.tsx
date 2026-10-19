@@ -4,21 +4,58 @@ import { CrmBar } from "@/components/crm/crm-bar";
 import { Filters } from "@/components/crm/filters";
 import { acqSetters } from "@/lib/acquisitie/server";
 import { formatEuro } from "@/lib/commission";
-import { FASES, type Pijplijn } from "@/lib/crm/core";
-import { filterCards, filterOptions, loadCards, requireCrmUser, type BoardFilter } from "@/lib/crm/server";
+import { FASES, faseLabel, type Pijplijn } from "@/lib/crm/core";
+import { filterCards, filterOptions, loadCards, requireCrmUser, views, type BoardFilter, type Card } from "@/lib/crm/server";
+import { db } from "@/lib/supabase/server";
 import { afspraakTekst } from "./format";
 
 export type SP = Promise<Record<string, string | undefined>>;
 
+const WEERGAVEN = ["vandaag", "achterstallig", "nieuw", "mijn", "vrij"] as const;
+const kort = (iso: string | null) => (iso ? new Date(iso).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : null);
+
 export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn; searchParams: SP }) {
   const user = await requireCrmUser();
   const sp = await searchParams;
-  const f: BoardFilter = { q: sp.q, tag: sp.tag, behandeling: sp.behandeling, stad: sp.stad, provincie: sp.provincie, setter: sp.setter, mijn: sp.mijn === "1" };
-  const [alle, setters] = await Promise.all([loadCards(pijplijn, user), acqSetters()]);
+  const f: BoardFilter = {
+    q: sp.q,
+    tag: sp.tag,
+    type: sp.type,
+    behandeling: sp.behandeling,
+    stad: sp.stad,
+    provincie: sp.provincie,
+    setter: sp.setter,
+    weergave: WEERGAVEN.find((w) => w === sp.weergave),
+    heeft: sp.heeft === "telefoon" || sp.heeft === "website" || sp.heeft === "email" ? sp.heeft : undefined,
+  };
+  const tabel = sp.toon === "tabel";
+  const [alle, setters, mijnViews] = await Promise.all([loadCards(pijplijn, user), acqSetters(), views(user)]);
   const naam = new Map(setters.map((s) => [s.id, s.naam]));
   const opties = filterOptions(alle);
   const cards = filterCards(alle, f, user);
   const path = `/crm/${pijplijn}`;
+
+  // Volgende afspraak per lead (sales).
+  const afspraken = new Map<string, { start_op: string; status: string; type: string }>();
+  if (pijplijn === "sales" && cards.length) {
+    const ids = cards.map((c) => c.contact_id);
+    for (let i = 0; i < ids.length; i += 300) {
+      const { data } = await db().from("crm_appointments").select("contact_id, start_op, status, type").in("contact_id", ids.slice(i, i + 300)).neq("status", "verplaatst").order("start_op", { ascending: false });
+      for (const a of (data ?? []) as { contact_id: string; start_op: string; status: string; type: string }[]) if (!afspraken.has(a.contact_id)) afspraken.set(a.contact_id, a);
+    }
+  }
+
+  const volgendeActie = (c: Card) => {
+    const k = c.contact;
+    if (k.niet_benaderen) return "Niet meer benaderen";
+    if (pijplijn === "sales") {
+      const a = afspraken.get(c.contact_id);
+      return a ? `${a.type === "kennismaking" ? "Kennismaking" : "Salesgesprek"} ${afspraakTekst(a.start_op)} · ${a.status.replace("_", "-")}` : null;
+    }
+    if (k.volgende_opvolging_op) return `${new Date(k.volgende_opvolging_op).getTime() < Date.now() ? "⚠ " : ""}Opvolgen ${kort(k.volgende_opvolging_op)}`;
+    if (c.fase === "nieuw") return "Nog niet gebeld";
+    return null;
+  };
 
   const board: BoardCard[] = cards.map((c) => {
     const k = c.contact;
@@ -28,15 +65,16 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       contactId: k.id,
       fase: c.fase,
       salon: k.salon_naam,
-      sub: [k.contactpersoon, k.stad && (k.provincie ? `${k.stad} (${k.provincie})` : k.stad)].filter(Boolean).join(" · "),
-      telefoon: k.telefoon,
+      sub: [k.type_bedrijf, k.stad && (k.provincie ? `${k.stad} (${k.provincie})` : k.stad)].filter(Boolean).join(" · "),
+      telefoon: k.telefoon_norm,
       behandelingen: k.behandelingen,
       tags: k.tags,
       waarde: c.waarde_cents ? formatEuro(c.waarde_cents) : null,
       wie: wie ? { id: wie, naam: naam.get(wie) ?? "?" } : null,
-      afspraak: pijplijn === "sales" ? afspraakTekst(c.afspraak_op) : null,
-      vergrendeld: pijplijn === "sales" ? user.rol !== "admin" : user.rol === "setter" && !!k.eigenaar_id && k.eigenaar_id !== user.setter.id,
-      bewerkbaar: user.rol === "admin" || !k.eigenaar_id || k.eigenaar_id === user.setter.id,
+      afspraak: volgendeActie(c),
+      belpogingen: k.belpogingen,
+      vergrendeld: pijplijn === "sales" ? !(user.rol === "admin" || (user.rol === "sales" && c.verkoper_id === user.setter.id)) : !(user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id))),
+      bewerkbaar: user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id)),
     };
   });
   const waardes = Object.fromEntries(
@@ -45,13 +83,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       return [x.key, sum ? formatEuro(sum) : ""];
     }),
   );
-  const titel = pijplijn === "outbound" ? "Outbound" : user.rol === "admin" ? "Sales" : "Mijn ingeplande leads";
-  const intro =
-    pijplijn === "outbound"
-      ? "Sleep een lead naar de volgende fase, of open hem om te bellen en notities te maken. Een lead die jij oppakt, wordt van jou."
-      : user.rol === "admin"
-        ? "Alle ingeplande gesprekken. Vul na het gesprek de fase en de waarde in. Gewonnen met een setter-tag telt mee in haar commissie."
-        : "Leads die jij hebt ingepland en wat ermee gebeurt na het gesprek.";
+  const titel = pijplijn === "outbound" ? (user.rol === "setter" ? "Leads" : "Koude acquisitie") : user.rol === "admin" ? "Sales" : user.rol === "sales" ? "Mijn salesleads" : "Mijn ingeplande leads";
 
   return (
     <>
@@ -59,21 +91,61 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       <div className="crm-toolbar">
         <div>
           <h1>{titel}</h1>
-          <p className="lead">{intro}</p>
+          <p className="lead">
+            {pijplijn === "outbound"
+              ? "Sleep een lead naar een andere fase of open hem. Bellen gaat het snelst via Bellen (automatische wachtrij)."
+              : user.rol === "setter"
+                ? "Leads die jij hebt ingepland, met de afspraakstatus en wat er na het gesprek gebeurt."
+                : "Ingeplande leads. Registreer verschenen/no-show in de agenda of op de leadkaart; bij Offerte en Geaccepteerd vraagt het CRM de verplichte gegevens."}
+          </p>
         </div>
-        {pijplijn === "outbound" && <Link href="/crm/nieuw" className="button button--small">+ Lead toevoegen</Link>}
+        {pijplijn === "outbound" && user.rol !== "sales" && <Link href="/crm/nieuw" className="button button--small">+ Lead toevoegen</Link>}
       </div>
-      <Filters action={path} f={f} opties={opties} setters={user.rol === "admin" ? setters : undefined} toonMijn={user.rol === "setter" && pijplijn === "outbound"} />
+      <Filters action={path} f={f} query={sp} opties={opties} setters={user.rol === "admin" ? setters : undefined} pijplijn={pijplijn} tabel={tabel} views={mijnViews.filter((v) => v.pijplijn === pijplijn)} />
       <p className="small muted">{cards.length} van {alle.length} leads</p>
-      <Board
-        pijplijn={pijplijn}
-        fases={FASES[pijplijn]}
-        cards={board}
-        waardes={waardes}
-        alleTags={opties.tags}
-        setters={user.rol === "admin" ? setters.filter((x) => x.actief).map((x) => ({ id: x.id, naam: x.naam })) : null}
-        rol={user.rol}
-      />
+      {tabel ? (
+        <div className="table-wrap card">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Salon</th>
+                <th>Plaats</th>
+                <th>Fase</th>
+                <th>{pijplijn === "sales" ? "Setter (tag)" : "Eigenaar"}</th>
+                <th>Volgende actie</th>
+                <th className="num">Pogingen</th>
+                <th className="num">Waarde</th>
+                <th>Tags</th>
+              </tr>
+            </thead>
+            <tbody>
+              {board.slice(0, 1000).map((c) => (
+                <tr key={c.id}>
+                  <td><Link href={`/crm/lead/${c.contactId}`}>{c.salon}</Link></td>
+                  <td>{c.sub}</td>
+                  <td>{faseLabel(pijplijn, c.fase)}</td>
+                  <td>{c.wie?.naam ?? <span className="muted">–</span>}</td>
+                  <td className="small">{c.afspraak ?? "–"}</td>
+                  <td className="num">{c.belpogingen}</td>
+                  <td className="num">{c.waarde ?? "–"}</td>
+                  <td className="small">{c.tags.join(", ")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {board.length > 1000 && <p className="small muted">Eerste 1000 getoond; gebruik de filters.</p>}
+        </div>
+      ) : (
+        <Board
+          pijplijn={pijplijn}
+          fases={FASES[pijplijn]}
+          cards={board}
+          waardes={waardes}
+          alleTags={opties.tags}
+          setters={user.rol === "admin" ? setters.filter((x) => x.actief && (pijplijn === "outbound" || x.rol === "setter")).map((x) => ({ id: x.id, naam: x.naam })) : null}
+          rol={user.rol === "admin" ? "admin" : "setter"}
+        />
+      )}
     </>
   );
 }

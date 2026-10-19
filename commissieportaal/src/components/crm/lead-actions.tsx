@@ -36,8 +36,11 @@ export interface ContactFields {
   telefoon: string;
   email: string;
   website: string;
+  adres: string;
+  postcode: string;
   stad: string;
   provincie: string;
+  type_bedrijf: string;
   behandelingen: string;
 }
 
@@ -65,6 +68,10 @@ export function ContactForm({ contactId, initial, disabled, provincies }: { cont
         <label>Website<input value={v.website} onChange={set("website")} disabled={disabled} /></label>
       </div>
       <div className="row">
+        <label>Adres<input value={v.adres} onChange={set("adres")} disabled={disabled} /></label>
+        <label>Postcode<input value={v.postcode} onChange={set("postcode")} disabled={disabled} /></label>
+      </div>
+      <div className="row">
         <label>Stad<input value={v.stad} onChange={set("stad")} disabled={disabled} /></label>
         <label>
           Provincie
@@ -74,6 +81,7 @@ export function ContactForm({ contactId, initial, disabled, provincies }: { cont
           </select>
         </label>
       </div>
+      <label>Type bedrijf<input value={v.type_bedrijf} onChange={set("type_bedrijf")} placeholder="Schoonheidssalon, huidkliniek…" disabled={disabled} /></label>
       <label>Behandelingen (komma tussen)<input value={v.behandelingen} onChange={set("behandelingen")} placeholder="Laser, Injectables" disabled={disabled} /></label>
       {!disabled && <button type="submit" className="button button--small" disabled={a.busy}>{contactId ? "Gegevens opslaan" : "Lead toevoegen"}</button>}
       <Msg m={a.msg} />
@@ -103,29 +111,45 @@ export function NoteForm({ contactId }: { contactId: string }) {
 export function ImportForm() {
   const a = useAction();
   const [url, setUrl] = useState("");
-  const [res, setRes] = useState<null | { toegevoegd: number; bestaand: number; dubbel: number; zonderProvincie: number; overgeslagen: { tab: string; reden: string }[] }>(null);
+  const [res, setRes] = useState<null | { toegevoegd: number; bestaand: number; dubbel: number; twijfel: number; zonderTelefoon: number; zonderProvincie: number; overgeslagen: { tab: string; reden: string }[] }>(null);
+  async function stuur(body: Record<string, unknown>) {
+    setRes(null);
+    const r = await a.run("/api/crm/import", body, "Geïmporteerd.");
+    if (r.ok) setRes(r.data);
+  }
   return (
-    <form
-      className="crm-form card"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setRes(null);
-        const r = await a.run("/api/crm/import", { url }, "Geïmporteerd.");
-        if (r.ok) setRes(r.data);
-      }}
-    >
-      <label>Link naar de Google Sheet<input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…" required /></label>
-      <button type="submit" className="button button--small" disabled={a.busy}>{a.busy ? "Inlezen…" : "Importeren"}</button>
+    <div className="crm-form">
+      <form className="crm-form card" onSubmit={(e) => { e.preventDefault(); void stuur({ url }); }}>
+        <label>Google Sheet-link<input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…" required /></label>
+        <button type="submit" className="button button--small" disabled={a.busy}>{a.busy ? "Inlezen…" : "Sheet importeren"}</button>
+      </form>
+      <div className="crm-form card">
+        <label>
+          CSV-bestand (Outscraper, Apify of eigen export)
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            disabled={a.busy}
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              if (f.size > 15_000_000) return alert("Bestand is groter dan 15 MB. Splits het op.");
+              await stuur({ csv: await f.text(), bestandsnaam: f.name });
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
       {res ? (
         <div className="notice notice--ok">
           <strong>{res.toegevoegd} nieuwe leads toegevoegd</strong>
-          <span className="small">{res.bestaand} stonden er al in · {res.dubbel} dubbel in de sheet · {res.zonderProvincie} zonder provincie (stad onbekend)</span>
+          <span className="small">{res.bestaand} stonden er al in (zelfde telefoon of e-mail) · {res.dubbel} dubbel in het bestand · {res.twijfel} twijfelgevallen in Beoordelen · {res.zonderTelefoon} zonder telefoonnummer · {res.zonderProvincie} zonder provincie</span>
           {res.overgeslagen.map((o) => <span key={o.tab} className="small">Tab “{o.tab}” overgeslagen: {o.reden}</span>)}
         </div>
       ) : (
         <Msg m={a.msg} />
       )}
-    </form>
+    </div>
   );
 }
 
@@ -188,7 +212,7 @@ export function WaardeField({ oppId, cents, disabled }: { oppId: string; cents: 
   );
 }
 
-export function OwnerField({ contactId, oppId, value, setters, label, soort }: { contactId: string; oppId?: string; value: string; setters: { id: string; naam: string }[]; label: string; soort: "eigenaar" | "setter" }) {
+export function OwnerField({ contactId, oppId, value, setters, label, soort }: { contactId: string; oppId?: string; value: string; setters: { id: string; naam: string }[]; label: string; soort: "eigenaar" | "setter" | "verkoper" }) {
   const a = useAction();
   return (
     <label className="crm-field">
@@ -199,7 +223,9 @@ export function OwnerField({ contactId, oppId, value, setters, label, soort }: {
         onChange={(e) =>
           soort === "setter"
             ? a.run(`/api/crm/opp/${oppId}`, { setterId: e.target.value || null })
-            : a.run(`/api/crm/contact/${contactId}`, { eigenaar_id: e.target.value || null })
+            : soort === "verkoper"
+              ? a.run(`/api/crm/opp/${oppId}`, { verkoperId: e.target.value || null })
+              : a.run(`/api/crm/contact/${contactId}`, { eigenaar_id: e.target.value || null })
         }
       >
         <option value="">Niet toegewezen</option>
@@ -210,15 +236,6 @@ export function OwnerField({ contactId, oppId, value, setters, label, soort }: {
   );
 }
 
-export function ClaimButton({ contactId }: { contactId: string }) {
-  const a = useAction();
-  return (
-    <span>
-      <button type="button" className="button button--small" disabled={a.busy} onClick={() => a.run(`/api/crm/contact/${contactId}`, { claim: true }, "Opgepakt.")}>Deze lead oppakken</button>{" "}
-      <Msg m={a.msg} />
-    </span>
-  );
-}
 
 export function EditableContact(props: { contactId: string; initial: ContactFields; disabled: boolean; provincies: string[] }) {
   const [bewerken, setBewerken] = useState(false);
@@ -229,8 +246,10 @@ export function EditableContact(props: { contactId: string; initial: ContactFiel
     ["Telefoon", v.telefoon],
     ["E-mail", v.email],
     ["Website", v.website],
+    ["Adres", [v.adres, v.postcode].filter(Boolean).join(", ")],
     ["Stad", v.stad],
     ["Provincie", v.provincie],
+    ["Type bedrijf", v.type_bedrijf],
     ["Behandelingen", v.behandelingen],
   ];
   return (
@@ -254,5 +273,154 @@ export function EditableContact(props: { contactId: string; initial: ContactFiel
         </dl>
       )}
     </div>
+  );
+}
+
+export function OpvolgField({ contactId, waarde, disabled }: { contactId: string; waarde: string | null; disabled: boolean }) {
+  const a = useAction();
+  const lokaal = waarde ? new Date(new Date(waarde).getTime() - new Date(waarde).getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
+  const [v, setV] = useState(lokaal);
+  return (
+    <label className="crm-field">
+      Volgend opvolgmoment
+      <span className="inline-form__row">
+        <input type="datetime-local" value={v} disabled={disabled} onChange={(e) => setV(e.target.value)} />
+        <button type="button" className="button button--small button--ghost" disabled={disabled || a.busy} onClick={() => a.run(`/api/crm/contact/${contactId}`, { volgende_opvolging_op: v ? new Date(v).toISOString() : null })}>Opslaan</button>
+      </span>
+      <Msg m={a.msg} />
+    </label>
+  );
+}
+
+export function NietBenaderen({ contactId, aan, reden, disabled }: { contactId: string; aan: boolean; reden: string | null; disabled: boolean }) {
+  const a = useAction();
+  return (
+    <div className="crm-field">
+      Niet meer benaderen
+      {aan ? (
+        <span style={{ fontWeight: 400 }}>
+          <strong style={{ color: "var(--primair)" }}>Ja</strong> · {reden}{" "}
+          {!disabled && <button type="button" className="linkbutton" onClick={() => a.run(`/api/crm/contact/${contactId}`, { niet_benaderen: false })}>Opheffen</button>}
+        </span>
+      ) : (
+        <span style={{ fontWeight: 400 }}>
+          Nee{" "}
+          {!disabled && (
+            <button type="button" className="linkbutton" onClick={() => confirm("Deze lead nooit meer bellen of berichten sturen?") && a.run(`/api/crm/contact/${contactId}`, { niet_benaderen: true, niet_benaderen_reden: "Handmatig ingesteld" })}>
+              Instellen
+            </button>
+          )}
+        </span>
+      )}
+      <Msg m={a.msg} />
+    </div>
+  );
+}
+
+export function SluitdatumField({ oppId, waarde, disabled }: { oppId: string; waarde: string | null; disabled: boolean }) {
+  const a = useAction();
+  const [v, setV] = useState(waarde ?? "");
+  return (
+    <label className="crm-field">
+      Sluitingsdatum
+      <span className="inline-form__row">
+        <input type="date" value={v} disabled={disabled} onChange={(e) => setV(e.target.value)} />
+        <button type="button" className="button button--small button--ghost" disabled={disabled || a.busy} onClick={() => a.run(`/api/crm/opp/${oppId}`, { sluitdatum: v || null })}>Opslaan</button>
+      </span>
+      <Msg m={a.msg} />
+    </label>
+  );
+}
+
+export function AfspraakKnoppen({ id, status }: { id: string; status: string }) {
+  const a = useAction();
+  if (status === "geannuleerd" || status === "verplaatst") return null;
+  return (
+    <span className="inline-form__row">
+      <button type="button" className="crm-stage" aria-pressed={status === "verschenen"} disabled={a.busy} onClick={() => a.run(`/api/crm/afspraak/${id}`, { status: "verschenen" }, "Verschenen.")}>Verschenen</button>
+      <button type="button" className="crm-stage" aria-pressed={status === "no_show"} disabled={a.busy} onClick={() => a.run(`/api/crm/afspraak/${id}`, { status: "no_show" }, "No-show.")}>No-show</button>
+      {(status === "verschenen" || status === "no_show") && (
+        <button type="button" className="linkbutton small" disabled={a.busy} onClick={() => a.run(`/api/crm/afspraak/${id}`, { status: "gepland" }, "Teruggezet.")}>Terugzetten</button>
+      )}
+      <Msg m={a.msg} />
+    </span>
+  );
+}
+
+export function TaakAfvinken({ id, gedaan, titel }: { id: string; gedaan: boolean; titel: string }) {
+  const a = useAction();
+  return (
+    <label className="crm-check">
+      <input type="checkbox" defaultChecked={gedaan} disabled={a.busy} onChange={(e) => a.run(`/api/crm/taak/${id}`, { gedaan: e.target.checked })} />
+      <span style={gedaan ? { textDecoration: "line-through", color: "var(--tekst-zacht)" } : undefined}>{titel}</span>
+    </label>
+  );
+}
+
+const CATS = [
+  ["prijs", "Prijs"],
+  ["timing", "Timing"],
+  ["geen_interesse", "Geen interesse"],
+  ["bestaande_leverancier", "Bestaande leverancier"],
+  ["eerst_informatie", "Eerst informatie"],
+  ["overig", "Overig"],
+] as const;
+export const categorieLabel = (k: string) => CATS.find((c) => c[0] === k)?.[1] ?? k;
+
+export function AnalyseCorrectie({ callId, samenvatting, vervolgstap, bezwaren }: { callId: string; samenvatting: string | null; vervolgstap: string | null; bezwaren: { categorie: string; citaat: string; tijdstip_sec: number }[] }) {
+  const a = useAction();
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState({ samenvatting: samenvatting ?? "", vervolgstap: vervolgstap ?? "", bezwaren });
+  if (!open) return <button type="button" className="linkbutton small" onClick={() => setOpen(true)}>Analyse corrigeren</button>;
+  return (
+    <form
+      className="crm-form card"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const r = await a.run(`/api/crm/oproep/${callId}`, v, "Correctie opgeslagen.");
+        if (r.ok) setOpen(false);
+      }}
+    >
+      <label>Samenvatting<textarea rows={3} value={v.samenvatting} onChange={(e) => setV({ ...v, samenvatting: e.target.value })} /></label>
+      <label>Afgesproken vervolgstap<input value={v.vervolgstap} onChange={(e) => setV({ ...v, vervolgstap: e.target.value })} /></label>
+      {v.bezwaren.map((b, i) => (
+        <div key={i} className="row">
+          <select value={b.categorie} onChange={(e) => setV({ ...v, bezwaren: v.bezwaren.map((x, j) => (j === i ? { ...x, categorie: e.target.value } : x)) })}>
+            {CATS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+          </select>
+          <input value={b.citaat} onChange={(e) => setV({ ...v, bezwaren: v.bezwaren.map((x, j) => (j === i ? { ...x, citaat: e.target.value } : x)) })} />
+          <button type="button" className="linkbutton" onClick={() => setV({ ...v, bezwaren: v.bezwaren.filter((_, j) => j !== i) })}>Verwijderen</button>
+        </div>
+      ))}
+      <button type="button" className="linkbutton small" onClick={() => setV({ ...v, bezwaren: [...v.bezwaren, { categorie: "overig", citaat: "", tijdstip_sec: 0 }] })}>+ Bezwaar toevoegen</button>
+      <button type="submit" className="button button--small" disabled={a.busy}>Opslaan</button>
+      <Msg m={a.msg} />
+    </form>
+  );
+}
+
+export function HandmatigeAfspraak({ contactId, setters }: { contactId: string; setters: { id: string; naam: string }[] }) {
+  const a = useAction();
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState({ type: "kennismaking", start: "", setterId: "" });
+  if (!open) return <button type="button" className="linkbutton small" onClick={() => setOpen(true)}>Afspraak buiten Calendly vastleggen</button>;
+  return (
+    <form
+      className="crm-form card"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        const r = await a.run("/api/crm/afspraak", { contactId, type: v.type, start: new Date(v.start).toISOString(), setterId: v.setterId || null }, "Afspraak vastgelegd.");
+        if (r.ok) setOpen(false);
+      }}
+    >
+      <div className="row">
+        <label>Type<select value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })}><option value="kennismaking">Kennismaking</option><option value="salesgesprek">Salesgesprek</option></select></label>
+        <label>Datum en tijd<input type="datetime-local" required value={v.start} onChange={(e) => setV({ ...v, start: e.target.value })} /></label>
+        <label>Toegeschreven setter<select value={v.setterId} onChange={(e) => setV({ ...v, setterId: e.target.value })}><option value="">Geen</option>{setters.map((s) => <option key={s.id} value={s.id}>{s.naam}</option>)}</select></label>
+      </div>
+      <span className="small muted">Alleen voor afspraken die niet via Calendly liepen. Bevestiging en herinnering moet je dan zelf regelen.</span>
+      <button type="submit" className="button button--small" disabled={a.busy}>Vastleggen</button>
+      <Msg m={a.msg} />
+    </form>
   );
 }

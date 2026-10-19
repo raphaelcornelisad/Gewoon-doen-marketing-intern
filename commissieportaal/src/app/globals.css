@@ -315,3 +315,59 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
 .crm-euro input { border: 0 !important; padding-left: 0 !important; }
 .crm-euro:focus-within { border-color: var(--primair); box-shadow: 0 0 0 3px var(--primair-zacht); }
 .crm-lead { display: grid; gap: 16px; max-width: 760px; }
+.crm-groen { background: #1E7A3C; }
+.crm-groen:hover { background: #17612F; }
+.crm-calendly { width: 100%; height: min(70vh, 680px); border: 1px solid var(--rand); border-radius: 10px; background: var(--wit); }
+.crm-sheet__panel:has(.crm-calendly) { max-width: 760px; }
+.crm-bel { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .crm-bel-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; } }
+.crm-belknop { display: inline-flex; gap: 8px; align-items: center; background: #1E7A3C; width: auto; font-size: 18px; padding: 14px 22px; }
+.crm-belknop:hover { background: #17612F; }
+.crm-belstatus { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px; background: var(--vlak); border-radius: 10px; }
+.crm-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--tekst-zacht); }
+.crm-dot.is-live { background: #1E7A3C; box-shadow: 0 0 0 4px rgba(30,122,60,.2); }
+.crm-timer { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 20px; }
+.crm-uitkomsten { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.crm-uitkomst { font: inherit; font-weight: 700; padding: 12px; border-radius: 10px; border: 1px solid var(--rand); background: var(--wit); color: var(--tekst); cursor: pointer; text-align: left; }
+.crm-uitkomst:hover { border-color: var(--primair); }
+.crm-uitkomst--groen { background: #1E7A3C; color: var(--wit); border-color: #1E7A3C; }
+.crm-uitkomst--rood { color: var(--primair); }
+.crm-volgende { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 12px; border: 1px dashed var(--rand); border-radius: 10px; }
+.crm-script h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--tekst-zacht); margin: 12px 0 4px; }
+.crm-script p { margin: 0; white-space: pre-line; }
+.crm-script details { border-top: 1px solid var(--rand); padding: 6px 0; }
+.crm-script summary { cursor: pointer; font-weight: 700; }
+.crm-nav { flex-wrap: wrap; gap: 6px 14px; }
+.crm-badge--inline { position: static; display: inline-grid; margin-left: 4px; vertical-align: 1px; }
+.crm-snel { align-items: center; }
+.crm-snel a { text-decoration: none; color: var(--tekst); }
+.crm-snel a.crm-chip--tag { color: var(--wit); }
+.crm-weergave { margin-left: auto; font-size: 14px; }
+.crm-weergave a[aria-current="page"] { font-weight: 800; color: var(--tekst); text-decoration: none; }
+.crm-card__eigenaar { padding: 4px 12px 0; }
+.crm-label { display: inline-block; font-size: 12px; font-weight: 800; padding: 2px 8px; border-radius: 6px; background: var(--zwart); color: var(--wit); }
+.crm-label--leeg { background: var(--vlak); color: var(--tekst-zacht); border: 1px solid var(--rand); }
+.crm-card__actie { font-weight: 600; }
+.crm-acties { display: flex; flex-wrap: wrap; gap: 8px; }
+.crm-actie { font: inherit; display: inline-flex; flex-direction: column; align-items: center; gap: 4px; min-width: 76px; padding: 10px 8px; border: 1px solid var(--rand); border-radius: 12px; background: var(--wit); color: var(--tekst); text-decoration: none; cursor: pointer; font-size: 12px; font-weight: 700; }
+.crm-actie:hover { border-color: var(--primair); }
+.crm-actie--groen { color: #1E7A3C; border-color: #BFE3C8; }
+.crm-bubbels { display: grid; gap: 8px; }
+.crm-bubbel { max-width: 80%; padding: 8px 12px; border-radius: 12px; background: var(--vlak); justify-self: start; white-space: pre-line; }
+.crm-bubbel--uit { justify-self: end; background: #E3F3E7; }
+.crm-bubbel small { display: block; color: var(--tekst-zacht); font-size: 11px; margin-top: 4px; }
+.crm-status--mislukt { color: var(--primair); font-weight: 700; }
+.crm-transcript { max-height: 320px; overflow: auto; font-size: 14px; display: grid; gap: 4px; }
+.crm-agenda-item { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; border-top: 1px solid var(--rand); padding-top: 8px; }
+.crm-agenda-item > :last-child:not(.crm-chip) { grid-column: 2 / -1; }
+.crm-inbox { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .crm-inbox { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); } }
+.crm-inbox__lijst a { display: grid; gap: 2px; padding: 10px; border-bottom: 1px solid var(--rand); text-decoration: none; color: var(--tekst); }
+.crm-inbox__lijst a[aria-current="page"] { background: var(--vlak); }
+.crm-statuslijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.crm-chip--ok { background: #E3F3E7; border-color: #BFE3C8; color: #1E6B34; }
+.crm-chip--wacht { background: #FEF4D6; border-color: #F3DFA2; color: #8A5A00; }
+.crm-tegels { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.crm-tegel { display: grid; gap: 4px; text-decoration: none; color: var(--tekst); }
+a.crm-tegel:hover { border-color: var(--primair); }
+.crm-tegel__waarde { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }

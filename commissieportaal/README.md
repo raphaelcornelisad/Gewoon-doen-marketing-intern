@@ -62,12 +62,23 @@ in Vercel onder **Domains → gewoondoenmarketing.nl → DNS Records**.
 Google Cloud Console → nieuw project → **APIs & Services → Library → Google Sheets API → Enable** →
 **Credentials → Create credentials → API key**. Beperk de key tot de Google Sheets API.
 
-## CRM (outbound + sales)
+## CRM (koude acquisitie + sales)
 
-- `/crm/outbound`: bord met fases Nieuw → Gebeld → WAFU → Opvolgen → Ingepland → Verloren. Setters pakken vrij leads op (eerste die een lead verplaatst wordt eigenaar).
-- `/crm/sales`: Ingepland → Gesprek gevoerd → No-show → Offerte → Gewonnen → Verloren. Alleen de admin past dit aan; setters zien hier hun eigen ingeplande leads.
-- Ingepland in outbound (handmatig of via Calendly) maakt automatisch een saleskaart met setter-tag (UTM-code, anders eigenaar).
-- Gewonnen + waarde + setter-tag → close in `acq_closes` (telt mee in de acquisitiecommissie).
-- `/crm/import`: Google Sheet importeren (kopregel; tabnaam = behandeling als die kolom ontbreekt; provincie uit stad).
-- Calendly-koppeling draait elk uur mee met `/api/cron/calendly` (alleen afspraken vanaf `acq_settings.crm_calendly_vanaf`).
-- Tabellen: `crm_contacts`, `crm_opportunities`, `crm_activities` (migratie 0007).
+Eén database, twee pijplijnen op hetzelfde contact (geen dubbele contacten bij een boeking). Rollen: admin, setter, salesmedewerker (server-side afgedwongen).
+
+**Werkt zonder extra accounts**
+- Import: Google Sheet of CSV (Outscraper/Apify/eigen). Telefoon → +31, ontdubbelen op telefoon/e-mail/domein, twijfelgevallen naar `/crm/beoordelen`.
+- Belwachtrij `/crm/bellen`: atomaire reservering (`crm_reserveer_volgende`), één lead per setter, uitkomst met één klik, WAVO-pop-up, automatisch doorbellen met aftelling en pauze. Zonder Twilio belt de setter met de eigen telefoon (geen providerstatus).
+- Toewijzing na geregistreerde belpoging; huidige eigenaar, oorspronkelijke setter en toegeschreven setter (commissie) apart.
+- Inplannen: Calendly-link per gesprekstype met ondoorzichtige `utm_content`-referentie (→ lead, setter, type). Afspraak telt pas na bevestiging door Calendly.
+- Agenda `/crm/agenda`, inbox `/crm/inbox`, dashboards, cijfers, commissiegrootboek `/crm/commissie` (basis, show, bonus, close, correctie, uitbetaling; idempotente sleutels).
+
+**Wacht op aansluiting** (zie `/crm/instellingen`)
+- Calendly: `CALENDLY_TOKEN` (met webhook-rechten) in Vercel → knop “Calendly-webhook aanzetten”. Endpoint `/api/webhooks/calendly` (handtekening gecontroleerd). Uurlijkse herstel-sync in `/api/cron/calendly`.
+- Twilio Voice/sms/WhatsApp: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_API_KEY_SID`, `TWILIO_API_KEY_SECRET`, `TWILIO_TWIML_APP_SID`, `TWILIO_CALLER_ID`, `TWILIO_SMS_FROM`, `TWILIO_WHATSAPP_FROM` (optioneel `TWILIO_REGION`). TwiML App → `/api/twilio/voice`; inkomend → `/api/twilio/inkomend`.
+- Transcriptie: `DEEPGRAM_API_KEY`. Analyse (bezwaren met citaat en tijdstip): `ANTHROPIC_API_KEY`. Wachtrij via `/api/cron/analyse` (elke 5 min). Opnames worden na de bewaartermijn verwijderd (dagelijkse cron).
+- Google Agenda: later.
+
+**WhatsApp-regels**: toestemming per kanaal met bron/datum (`crm_consents`); buiten 24 uur na een inkomend bericht alleen goedgekeurde template; een nummer, gesprek of boeking is geen toestemming; mislukte verzending wordt nooit als verzonden getoond.
+
+Migraties: 0007–0011.
