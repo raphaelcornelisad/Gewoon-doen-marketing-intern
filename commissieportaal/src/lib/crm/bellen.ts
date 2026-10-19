@@ -95,9 +95,9 @@ export async function registreerUitkomst(user: CrmUser, callId: string, input: U
   const c = await getContact(call.contact_id);
   await wijsToe(c, s.id, user.email);
 
-  // Opvolgmoment: expliciet gekozen, of standaard morgen voor niet opgenomen/WAVO.
+  // Opvolgmoment: expliciet gekozen, of standaard morgen voor niet opgenomen/WAFU.
   let opvolg: string | null | undefined = input.opvolgOp ? new Date(input.opvolgOp).toISOString() : undefined;
-  if (opvolg === undefined && (u.key === "niet_opgenomen" || u.key === "wavo")) opvolg = new Date(now.getTime() + 24 * 3600000).toISOString();
+  if (opvolg === undefined && (u.key === "niet_opgenomen" || u.key === "wafu")) opvolg = new Date(now.getTime() + 24 * 3600000).toISOString();
   if (["niet_geinteresseerd", "ongeldig_nummer", "niet_benaderen", "ingepland"].includes(u.key)) opvolg = null;
 
   check(
@@ -126,7 +126,7 @@ export async function registreerUitkomst(user: CrmUser, callId: string, input: U
     type: "oproep",
     tekst: `Belpoging: ${u.label}${duur ? ` (${Math.floor(duur / 60)}:${String(duur % 60).padStart(2, "0")})` : ""}${input.notitie?.trim() ? `\n${input.notitie.trim()}` : ""}`,
   });
-  return { wavo: u.key === "niet_opgenomen" || u.key === "wavo", inplannen: u.key === "ingepland" };
+  return { wafu: u.key === "niet_opgenomen" || u.key === "wafu", inplannen: u.key === "ingepland" };
 }
 
 /** Lead die de setter nu gereserveerd heeft (bij herladen van het belscherm). */

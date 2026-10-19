@@ -68,7 +68,7 @@ Eén database, twee pijplijnen op hetzelfde contact (geen dubbele contacten bij 
 
 **Werkt zonder extra accounts**
 - Import: Google Sheet of CSV (Outscraper/Apify/eigen). Telefoon → +31, ontdubbelen op telefoon/e-mail/domein, twijfelgevallen naar `/crm/beoordelen`.
-- Belwachtrij `/crm/bellen`: atomaire reservering (`crm_reserveer_volgende`), één lead per setter, uitkomst met één klik, WAVO-pop-up, automatisch doorbellen met aftelling en pauze. Zonder Twilio belt de setter met de eigen telefoon (geen providerstatus).
+- Belwachtrij `/crm/bellen`: atomaire reservering (`crm_reserveer_volgende`), één lead per setter, uitkomst met één klik, WAFU-pop-up, automatisch doorbellen met aftelling en pauze. Zonder Twilio belt de setter met de eigen telefoon (geen providerstatus).
 - Toewijzing na geregistreerde belpoging; huidige eigenaar, oorspronkelijke setter en toegeschreven setter (commissie) apart.
 - Inplannen: Calendly-link per gesprekstype met ondoorzichtige `utm_content`-referentie (→ lead, setter, type). Afspraak telt pas na bevestiging door Calendly.
 - Agenda `/crm/agenda`, inbox `/crm/inbox`, dashboards, cijfers, commissiegrootboek `/crm/commissie` (basis, show, bonus, close, correctie, uitbetaling; idempotente sleutels).

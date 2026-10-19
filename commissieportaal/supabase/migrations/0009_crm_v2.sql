@@ -303,9 +303,9 @@ alter table commission_ledger enable row level security;
 revoke execute on function crm_reserveer_volgende(uuid, integer, uuid[]) from public, anon, authenticated;
 revoke execute on function crm_reserveer(uuid, uuid, integer) from public, anon, authenticated;
 
--- Startgegevens: standaard WAVO-bericht en een basisscript (aanpasbaar in Instellingen).
+-- Startgegevens: standaard WAFU-bericht en een basisscript (aanpasbaar in Instellingen).
 insert into crm_templates (naam, kanaal, doel, tekst) values
-  ('WAVO na gemiste oproep', 'whatsapp', 'wavo', 'Hoi {{voornaam}}, ik probeerde je net te bellen namens Gewoon Doen Marketing. We helpen salons zoals {{salon}} aan meer klanten via online campagnes. Wanneer schikt het om even kort te bellen? Groet, {{setter}}');
+  ('WAFU na gemiste oproep', 'whatsapp', 'wavo', 'Hoi {{voornaam}}, ik probeerde je net te bellen namens Gewoon Doen Marketing. We helpen salons zoals {{salon}} aan meer klanten via online campagnes. Wanneer schikt het om even kort te bellen? Groet, {{setter}}');
 insert into crm_scripts (naam, opening, kwalificatie, pitch, bezwaren, afsluiting) values (
   'Koude acquisitie salons',
   'Goedemiddag, je spreekt met {{setter}} van Gewoon Doen Marketing. Spreek ik met de eigenaar van {{salon}}?',

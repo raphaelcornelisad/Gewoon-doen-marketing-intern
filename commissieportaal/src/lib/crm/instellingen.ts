@@ -63,7 +63,7 @@ export async function slaTemplateOp(user: CrmUser, t: { id?: string; naam: strin
   const rij = {
     naam: t.naam.trim(),
     kanaal: t.kanaal === "sms" ? "sms" : "whatsapp",
-    doel: ["wavo", "bevestiging", "herinnering", "algemeen"].includes(t.doel) ? t.doel : "algemeen",
+    doel: ["wafu", "bevestiging", "herinnering", "algemeen"].includes(t.doel) ? t.doel : "algemeen",
     tekst: t.tekst.trim(),
     provider_template_id: t.provider_template_id?.trim() || null,
     categorie: t.categorie === "utility" ? "utility" : "marketing",

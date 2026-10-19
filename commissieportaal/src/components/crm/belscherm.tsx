@@ -67,7 +67,7 @@ export function BelScherm(p: Props) {
   const [notitie, setNotitie] = useState("");
   const [terug, setTerug] = useState<string | null>(null);
   const [fout, setFout] = useState<string | null>(null);
-  const [venster, setVenster] = useState<"wavo" | "inplannen" | null>(null);
+  const [venster, setVenster] = useState<"wafu" | "inplannen" | null>(null);
   const [aftel, setAftel] = useState<number | null>(null);
   const [pauze, setPauze] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -158,7 +158,7 @@ export function BelScherm(p: Props) {
     if (!r.ok) return setFout(r.message ?? "Opslaan mislukt.");
     setFase("afronden");
     router.refresh();
-    if (r.data.wavo) setVenster("wavo");
+    if (r.data.wafu) setVenster("wafu");
     else if (r.data.inplannen) setVenster("inplannen");
   }
 
@@ -267,13 +267,13 @@ export function BelScherm(p: Props) {
         {fout && <div className="alert"><span className="small">{fout}</span></div>}
       </section>
 
-      {venster === "wavo" && (
+      {venster === "wafu" && (
         <BerichtVenster
           contactId={p.lead.id}
-          doel="wavo"
-          titel="Plaats deze lead bij WAVO en stuur een bericht"
+          doel="wafu"
+          titel="Plaats deze lead bij WAFU en stuur een bericht"
           onKlaar={async () => {
-            if (p.lead.outboundId) await post(`/api/crm/opp/${p.lead.outboundId}`, { fase: "wavo" });
+            if (p.lead.outboundId) await post(`/api/crm/opp/${p.lead.outboundId}`, { fase: "wafu" });
             setVenster(null);
           }}
           onSluit={() => setVenster(null)}

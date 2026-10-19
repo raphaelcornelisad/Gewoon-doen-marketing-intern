@@ -35,7 +35,7 @@ const BRON: Record<string, string> = { sheet: "Google Sheet", csv: "CSV-import",
 const UITKOMST: Record<string, string> = {
   niet_opgenomen: "Niet opgenomen",
   terugbellen: "Terugbellen",
-  wavo: "Opvolgen via WhatsApp",
+  wafu: "Opvolgen via WhatsApp",
   geinteresseerd: "Geïnteresseerd",
   ingepland: "Ingepland",
   niet_geinteresseerd: "Niet geïnteresseerd",

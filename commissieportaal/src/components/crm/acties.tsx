@@ -10,7 +10,7 @@ type Check = { ok: boolean; message?: string; beslissing: Beslissing; templates:
 const waUrl = (tel: string, tekst: string) => `https://wa.me/${tel.replace(/^\+/, "")}?text=${encodeURIComponent(tekst)}`;
 
 /** WhatsApp/sms opstellen met kanaalcontrole (toestemming, 24-uursvenster, template). */
-export function BerichtVenster({ contactId, kanaal: start = "whatsapp", doel = "wavo", titel, onKlaar, onSluit, extra }: { contactId: string; kanaal?: "whatsapp" | "sms"; doel?: string; titel?: string; onKlaar?: () => void; onSluit: () => void; extra?: React.ReactNode }) {
+export function BerichtVenster({ contactId, kanaal: start = "whatsapp", doel = "wafu", titel, onKlaar, onSluit, extra }: { contactId: string; kanaal?: "whatsapp" | "sms"; doel?: string; titel?: string; onKlaar?: () => void; onSluit: () => void; extra?: React.ReactNode }) {
   const router = useRouter();
   const [kanaal, setKanaal] = useState(start);
   const [templateId, setTemplateId] = useState<string | null>(null);

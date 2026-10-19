@@ -116,14 +116,14 @@ type Tpl = { id?: string; naam: string; kanaal: string; doel: string; tekst: str
 
 export function TemplateForm({ tpl }: { tpl?: Tpl }) {
   const o = useOpslaan();
-  const [v, setV] = useState<Tpl>(tpl ?? { naam: "", kanaal: "whatsapp", doel: "wavo", tekst: "", provider_template_id: "", categorie: "marketing", actief: true });
+  const [v, setV] = useState<Tpl>(tpl ?? { naam: "", kanaal: "whatsapp", doel: "wafu", tekst: "", provider_template_id: "", categorie: "marketing", actief: true });
   const t = (k: keyof Tpl) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setV({ ...v, [k]: e.target.value });
   return (
     <form className="crm-form card" onSubmit={(e) => { e.preventDefault(); void o.run("template", { ...v, provider_template_id: v.provider_template_id ?? "" }); }}>
       <div className="row">
         <label>Naam<input value={v.naam} onChange={t("naam")} required /></label>
         <label>Kanaal<select value={v.kanaal} onChange={t("kanaal")}><option value="whatsapp">WhatsApp</option><option value="sms">Sms</option></select></label>
-        <label>Doel<select value={v.doel} onChange={t("doel")}><option value="wavo">WAVO na gemiste oproep</option><option value="bevestiging">Afspraakbevestiging</option><option value="herinnering">Herinnering</option><option value="algemeen">Algemeen</option></select></label>
+        <label>Doel<select value={v.doel} onChange={t("doel")}><option value="wafu">WAFU na gemiste oproep</option><option value="bevestiging">Afspraakbevestiging</option><option value="herinnering">Herinnering</option><option value="algemeen">Algemeen</option></select></label>
         <label>Categorie<select value={v.categorie} onChange={t("categorie")}><option value="marketing">Marketing</option><option value="utility">Utility (service)</option></select></label>
       </div>
       <label>Tekst<textarea rows={3} value={v.tekst} onChange={t("tekst")} required /></label>

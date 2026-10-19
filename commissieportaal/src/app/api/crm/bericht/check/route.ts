@@ -14,7 +14,7 @@ export async function GET(req: Request) {
   try {
     const c = await getContact(String(u.searchParams.get("contactId")));
     const tpls = (await templates()).filter((t) => t.kanaal === kanaal);
-    const gekozen = tpls.find((t) => t.id === u.searchParams.get("templateId")) ?? tpls.find((t) => t.doel === (u.searchParams.get("doel") ?? "wavo")) ?? tpls[0] ?? null;
+    const gekozen = tpls.find((t) => t.id === u.searchParams.get("templateId")) ?? tpls.find((t) => t.doel === (u.searchParams.get("doel") ?? "wafu")) ?? tpls[0] ?? null;
     const b = await controleerKanaal(c, kanaal, gekozen?.id);
     return NextResponse.json({
       ok: true,

@@ -8,7 +8,7 @@ export const FASES: Record<Pijplijn, { key: string; label: string }[]> = {
   outbound: [
     { key: "nieuw", label: "Nieuw" },
     { key: "niet_opgenomen", label: "Gebeld – niet opgenomen" },
-    { key: "wavo", label: "WAVO" },
+    { key: "wafu", label: "WAFU" },
     { key: "terugbellen", label: "Terugbellen" },
     { key: "in_gesprek", label: "In gesprek" },
     { key: "ingepland", label: "Ingepland – naar sales" },
@@ -28,7 +28,7 @@ export const FASES: Record<Pijplijn, { key: string; label: string }[]> = {
 };
 
 /** Fases waarin een lead nog in de belwachtrij hoort. */
-export const BELBAAR = ["nieuw", "niet_opgenomen", "wavo", "terugbellen"];
+export const BELBAAR = ["nieuw", "niet_opgenomen", "wafu", "terugbellen"];
 
 /** Volgorde in sales; automatische updates (agenda) schuiven alleen vooruit en nooit uit een eindfase. */
 export const SALES_RANG: Record<string, number> = { ingepland: 0, opvolgen: 1, kennismaking: 1, salesgesprek: 2, offerte: 3, geaccepteerd: 9, afgewezen: 9 };
@@ -42,7 +42,7 @@ export function automatischVooruit(huidig: string, nieuw: string): boolean {
 export const UITKOMSTEN = [
   { key: "niet_opgenomen", label: "Niet opgenomen", fase: "niet_opgenomen", bereikt: false },
   { key: "terugbellen", label: "Terugbellen", fase: "terugbellen", bereikt: true },
-  { key: "wavo", label: "Opvolgen via WhatsApp", fase: "wavo", bereikt: true },
+  { key: "wafu", label: "Opvolgen via WhatsApp", fase: "wafu", bereikt: true },
   { key: "geinteresseerd", label: "Geïnteresseerd", fase: "in_gesprek", bereikt: true },
   { key: "ingepland", label: "Ingepland", fase: null, bereikt: true },
   { key: "niet_geinteresseerd", label: "Niet geïnteresseerd", fase: "niet_geinteresseerd", bereikt: true },
