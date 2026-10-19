@@ -61,3 +61,13 @@ in Vercel onder **Domains → gewoondoenmarketing.nl → DNS Records**.
 ### 5. Google Sheets API-key
 Google Cloud Console → nieuw project → **APIs & Services → Library → Google Sheets API → Enable** →
 **Credentials → Create credentials → API key**. Beperk de key tot de Google Sheets API.
+
+## CRM (outbound + sales)
+
+- `/crm/outbound`: bord met fases Nieuw → Gebeld → WAFU → Opvolgen → Ingepland → Verloren. Setters pakken vrij leads op (eerste die een lead verplaatst wordt eigenaar).
+- `/crm/sales`: Ingepland → Gesprek gevoerd → No-show → Offerte → Gewonnen → Verloren. Alleen de admin past dit aan; setters zien hier hun eigen ingeplande leads.
+- Ingepland in outbound (handmatig of via Calendly) maakt automatisch een saleskaart met setter-tag (UTM-code, anders eigenaar).
+- Gewonnen + waarde + setter-tag → close in `acq_closes` (telt mee in de acquisitiecommissie).
+- `/crm/import`: Google Sheet importeren (kopregel; tabnaam = behandeling als die kolom ontbreekt; provincie uit stad).
+- Calendly-koppeling draait elk uur mee met `/api/cron/calendly` (alleen afspraken vanaf `acq_settings.crm_calendly_vanaf`).
+- Tabellen: `crm_contacts`, `crm_opportunities`, `crm_activities` (migratie 0007).

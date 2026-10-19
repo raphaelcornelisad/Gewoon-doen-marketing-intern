@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncCalendly } from "@/lib/acquisitie/server";
+import { linkCalendly } from "@/lib/crm/server";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   try {
-    return NextResponse.json({ ok: true, ...(await syncCalendly()) });
+    const sync = await syncCalendly();
+    const crm = await linkCalendly();
+    return NextResponse.json({ ok: true, ...sync, crm });
   } catch (e) {
     console.error("Calendly-sync mislukt", e);
     return NextResponse.json({ ok: false }, { status: 500 });

@@ -15,7 +15,7 @@ export default async function AcqPage({ searchParams }: { searchParams: Promise<
   return (
     <>
       <div className="admin-bar">
-        <strong>Mijn gesprekken</strong>
+        <span className="admin-bar__links"><a href="/crm">CRM</a><strong>Mijn commissie</strong></span>
         <span className="admin-bar__right">
           <span className="muted">{setter.email}</span>
           <form action="/api/acquisitie/logout" method="post"><button type="submit" className="linkbutton">Uitloggen</button></form>

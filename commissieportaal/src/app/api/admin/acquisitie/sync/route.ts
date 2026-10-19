@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { syncCalendly } from "@/lib/acquisitie/server";
+import { linkCalendly } from "@/lib/crm/server";
 import { getAdmin } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -9,6 +10,7 @@ export async function POST() {
   if (!(await getAdmin())) return NextResponse.json({ ok: false, message: "Niet ingelogd." }, { status: 401 });
   try {
     const r = await syncCalendly();
+    await linkCalendly();
     return NextResponse.json({ ok: true, message: `Bijgewerkt: ${r.invitees} afspraken uit Calendly.` });
   } catch (e) {
     console.error("Calendly-sync mislukt", e);

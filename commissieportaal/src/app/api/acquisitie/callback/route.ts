@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   const { data, error } = await sb.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
   const setter = data.user?.email ? await acqSetterByEmail(data.user.email) : null;
   if (error || !setter) return NextResponse.redirect(`${base}/acquisitie/login?fout=verlopen`);
-  const res = NextResponse.redirect(`${base}/acquisitie`);
+  const res = NextResponse.redirect(`${base}/crm`);
   const c = acqCookie(setter.email);
   res.cookies.set(c.name, c.value, c.options);
   return res;
