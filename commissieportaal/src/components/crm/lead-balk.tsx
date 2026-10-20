@@ -52,7 +52,7 @@ export function LeadBalk(p: {
         {knop("taak", "Taak", () => setOpen("taak"))}
         {p.rol === "admin" && knop("user", "Toewijzen", () => setOpen("toewijzen"))}
         {p.outbound && p.magOutbound && knop("move", "Fase outbound", () => setOpen("fase-outbound"))}
-        {p.sales && p.magSales && knop("move", "Fase sales", () => setOpen("fase-sales"))}
+        {p.sales && p.magSales && knop("move", "Fase call geboekt", () => setOpen("fase-sales"))}
       </div>
       {geblokkeerd && <div className="alert">Niet meer benaderen: bellen en berichten zijn uitgeschakeld.</div>}
 

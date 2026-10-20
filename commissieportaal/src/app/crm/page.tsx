@@ -103,7 +103,7 @@ export default async function Dashboard() {
           </ul>
         </section>
         <section className="card">
-          <h2>{user.rol === "setter" ? "Pijplijnvoortgang van mijn ingeplande leads" : "Sales"}</h2>
+          <h2>{user.rol === "setter" ? "Mijn geboekte calls" : "Call geboekt"}</h2>
           {sales.length === 0 && <p className="muted">Nog geen leads in sales.</p>}
           <ul className="crm-timeline">
             {sales.slice(0, 12).map((c) => (

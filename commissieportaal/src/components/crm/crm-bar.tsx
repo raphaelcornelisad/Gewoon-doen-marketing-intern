@@ -8,10 +8,10 @@ type L = [string, string];
 export function CrmBar({ user, actief, open }: { user: CrmUser; actief: string; open?: { beoordelen?: number; inbox?: number } }) {
   const hoofd: L[] =
     user.rol === "admin"
-      ? [["/crm", "Dashboard"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
+      ? [["/crm", "Dashboard"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Call geboekt"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
       : user.rol === "setter"
-        ? [["/crm", "Dashboard"], ["/crm/bellen", "Bellen"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
-        : [["/crm", "Dashboard"], ["/crm/sales", "Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]];
+        ? [["/crm", "Dashboard"], ["/crm/bellen", "Bellen"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Call geboekt"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
+        : [["/crm", "Dashboard"], ["/crm/sales", "Call geboekt"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]];
   const beheer: L[] = [
     ["/crm/overzicht", "Cijfers"],
     ["/crm/commissie", "Commissie setters"],

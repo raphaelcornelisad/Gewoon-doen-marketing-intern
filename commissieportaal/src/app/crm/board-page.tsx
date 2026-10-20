@@ -99,7 +99,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       return [x.key, sum ? formatEuro(sum) : ""];
     }),
   );
-  const titel = pijplijn === "outbound" ? (user.rol === "setter" ? "Leads" : "Koude acquisitie") : user.rol === "admin" ? "Sales" : user.rol === "sales" ? "Mijn salesleads" : "Mijn ingeplande leads";
+  const titel = pijplijn === "outbound" ? (user.rol === "setter" ? "Leads" : "Koude acquisitie") : user.rol === "admin" ? "Call geboekt" : user.rol === "sales" ? "Mijn geboekte calls" : "Mijn geboekte calls";
 
   return (
     <>
@@ -185,7 +185,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       ) : (
         <Board
           pijplijn={pijplijn}
-          fases={FASES[pijplijn]}
+          fases={FASES[pijplijn].filter((f) => f.key !== "klant")}
           cards={board}
           waardes={waardes}
           alleTags={opties.tags}

@@ -47,7 +47,7 @@ const BERICHT: Record<string, string> = { wachtrij: "in wachtrij", verzonden: "v
 
 function regel(a: Activity, naam: Map<string, string>) {
   const wie = a.door === "calendly" ? "Calendly" : a.door === "systeem" ? "Systeem" : a.door === "lead" ? "Lead" : a.setter_id ? (naam.get(a.setter_id) ?? a.door) : "Admin";
-  const p = a.pijplijn === "sales" ? "Sales" : "Outbound";
+  const p = a.pijplijn === "sales" ? "Call geboekt" : "Outbound";
   const wat =
     a.type === "fase"
       ? `${p}: ${a.van ? `${faseLabel(a.pijplijn as Pijplijn, a.van)} → ` : ""}${faseLabel(a.pijplijn as Pijplijn, a.naar ?? "")}${a.tekst ? ` (${a.tekst})` : ""}`
@@ -92,7 +92,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
       <div className="crm-lead">
         <p style={{ margin: 0 }}>
           <Link href="/crm/outbound">← Leads</Link>
-          {d.sales && <> · <Link href="/crm/sales">Sales</Link></>}
+          {d.sales && <> · <Link href="/crm/sales">Call geboekt</Link></>}
         </p>
 
         <section className="card crm-contactcard">
@@ -105,7 +105,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
             <span className="crm-chips">
               <span className={`crm-label${k.eigenaar_id ? "" : " crm-label--leeg"}`}>{k.eigenaar_id ? `Eigenaar: ${naam.get(k.eigenaar_id) ?? "?"}` : "Niet toegewezen"}</span>
               {d.outbound && <span className="crm-chip">{faseLabel("outbound", d.outbound.fase)}</span>}
-              {d.sales && <span className="crm-chip crm-chip--tag">Sales: {faseLabel("sales", d.sales.fase)}</span>}
+              {d.sales && <span className="crm-chip crm-chip--tag">Call geboekt: {faseLabel("sales", d.sales.fase)}</span>}
               {k.tags.map((x) => <span key={x} className="crm-chip crm-chip--tag">{x}</span>)}
             </span>
           </div>
@@ -166,7 +166,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
             </div>
 
             <div className="crm-details">
-              <strong>Sales</strong>
+              <strong>Call geboekt</strong>
               {d.sales ? (
                 <>
                   <span>

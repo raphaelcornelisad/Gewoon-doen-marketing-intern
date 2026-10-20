@@ -220,7 +220,11 @@ export async function loadCards(pijplijn: Pijplijn, user: CrmUser): Promise<Card
     return q.order("fase_sinds", { ascending: false }).order("id").range(from, to);
   });
   if (pijplijn === "outbound" && user.rol === "sales") return [];
-  return cards;
+  // Klanten horen niet in de werklijsten (outbound of call geboekt).
+  const klanten = new Set(
+    (await all<{ contact_id: string }>((f, t) => db().from("crm_opportunities").select("contact_id").eq("pijplijn", "outbound").eq("fase", "klant").order("contact_id").range(f, t))).map((r) => r.contact_id),
+  );
+  return cards.filter((c) => !klanten.has(c.contact_id));
 }
 
 const amsVandaag = () => new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Amsterdam" });
