@@ -4,38 +4,55 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { post } from "./sheet";
 
-/** Keuzeknop bovenin: schakelen tussen CRM's, en (admin) een nieuw CRM aanmaken. */
-export function CrmWissel({ huidig, lijst, magMaken }: { huidig: { id: string; naam: string }; lijst: { id: string; naam: string }[]; magMaken: boolean }) {
+/** Menu-item (CRM Outbound / CRM Sales): kies een CRM en open het bord; admin kan een nieuw CRM aanmaken. */
+export function CrmWissel({
+  label,
+  href,
+  actief,
+  huidig,
+  lijst,
+  magMaken,
+}: {
+  label: string;
+  href: string;
+  actief: boolean;
+  huidig: { id: string; naam: string };
+  lijst: { id: string; naam: string }[];
+  magMaken: boolean;
+}) {
   const router = useRouter();
   const [maken, setMaken] = useState(false);
   const [naam, setNaam] = useState("");
   const [fout, setFout] = useState<string | null>(null);
   const [bezig, setBezig] = useState(false);
 
-  const klaar = (el: HTMLElement) => {
+  const open = (el: HTMLElement) => {
     el.closest("details")?.removeAttribute("open");
-    router.push(location.pathname.startsWith("/crm/lead/") ? "/crm/outbound" : location.pathname + location.search);
+    router.push(href);
     router.refresh();
   };
 
   return (
     <details className="crm-menu crm-wissel">
-      <summary title="Wissel van CRM">{huidig.naam}</summary>
+      <summary className={actief ? "is-actief" : undefined} aria-current={actief ? "page" : undefined}>
+        {label}
+        {actief && <span className="crm-wissel__naam">{huidig.naam}</span>}
+      </summary>
       <div className="crm-menu__lijst crm-menu__lijst--links">
-        <span className="small muted crm-menu__email">Wissel van CRM</span>
+        <span className="small muted crm-menu__email">Kies een CRM</span>
         {lijst.map((w) => (
           <button
             key={w.id}
             type="button"
-            className={`linkbutton${w.id === huidig.id ? " is-actief" : ""}`}
-            aria-current={w.id === huidig.id ? "true" : undefined}
+            className={`linkbutton${actief && w.id === huidig.id ? " is-actief" : ""}`}
             onClick={async (e) => {
               const el = e.currentTarget;
               if (w.id !== huidig.id) await post("/api/crm/werkruimte", { id: w.id });
-              klaar(el);
+              open(el);
             }}
           >
-            {w.id === huidig.id ? "✓ " : ""}{w.naam}
+            {w.naam}
+            {actief && w.id === huidig.id ? " ✓" : ""}
           </button>
         ))}
         {magMaken && (
@@ -53,9 +70,9 @@ export function CrmWissel({ huidig, lijst, magMaken }: { huidig: { id: string; n
                   if (r.ok) {
                     setNaam("");
                     setMaken(false);
-                    klaar(el);
+                    open(el);
                   } else if (r.message?.includes("vergrendeld")) {
-                    router.push(`/crm/beheer?next=${encodeURIComponent(location.pathname)}`);
+                    router.push(`/crm/beheer?next=${encodeURIComponent(href)}`);
                   } else setFout(r.message ?? "Aanmaken mislukt.");
                 }}
               >

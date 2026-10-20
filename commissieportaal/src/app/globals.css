@@ -425,9 +425,13 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 .crm-notitie-preview p { margin: 0; font-size: 14px; line-height: 1.4; white-space: pre-wrap; max-height: 180px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; }
 
 /* CRM-wisselaar (Laser ontharen, Huidverbetering, …) */
-.crm-top__links { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
-.crm-wissel summary { background: var(--zwart); color: var(--wit); border-color: var(--zwart); }
-.crm-wissel summary::after { color: var(--wit); }
+.crm-top__hoofd { align-items: center; }
+.crm-wissel summary { border-color: transparent; font-size: 15px; color: var(--tekst); }
+.crm-wissel summary:hover { background: var(--vlak); }
+.crm-wissel summary.is-actief { background: var(--zwart); color: var(--wit); border-color: var(--zwart); }
+.crm-wissel summary.is-actief::after { color: var(--wit); }
+.crm-wissel__naam { font-weight: 600; font-size: 13px; opacity: .8; }
+.crm-wissel__naam::before { content: "· "; }
 .crm-menu__lijst--links { left: 0; right: auto; }
 .crm-menu__lijst .linkbutton.is-actief { color: var(--primair); }
 .crm-wissel__form { display: grid; gap: 6px; padding: 6px; }

@@ -10,10 +10,10 @@ type L = [string, string];
 export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: string; open?: { beoordelen?: number; inbox?: number } }) {
   const hoofd: L[] =
     user.rol === "admin"
-      ? [["/crm", "Dashboard"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Call geboekt"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
+      ? [["/crm", "Dashboard"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
       : user.rol === "setter"
-        ? [["/crm", "Dashboard"], ["/crm/bellen", "Bellen"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Call geboekt"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
-        : [["/crm", "Dashboard"], ["/crm/sales", "Call geboekt"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]];
+        ? [["/crm", "Dashboard"], ["/crm/bellen", "Bellen"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
+        : [["/crm", "Dashboard"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]];
   const beheer: L[] = [
     ["/crm/overzicht", "Cijfers"],
     ["/crm/commissie", "Commissie setters"],
@@ -22,20 +22,23 @@ export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: st
     ["/crm/instellingen", "Instellingen"],
     ["/admin", "Commissieportaal (salons)"],
   ];
-  const teller = (href: string) => (href === "/crm/beoordelen" ? open?.beoordelen : href === "/crm/inbox" ? open?.inbox : undefined);
-  const link = ([href, label]: L) => (
-    <Link key={href} href={href} aria-current={actief === href ? "page" : undefined} className={actief === href ? "is-actief" : undefined}>
-      {label}
-      {teller(href) ? <span className="crm-badge crm-badge--inline">{teller(href)}</span> : null}
-    </Link>
-  );
   const [huidig, lijst] = await Promise.all([huidigeWerkruimte(), werkruimtes()]);
+  const teller = (href: string) => (href === "/crm/beoordelen" ? open?.beoordelen : href === "/crm/inbox" ? open?.inbox : undefined);
+  const link = ([href, label]: L) => {
+    // CRM Outbound / CRM Sales: eerst het CRM kiezen (Laser ontharen, ...), dan het bord openen.
+    if (href === "/crm/outbound" || href === "/crm/sales") {
+      return <CrmWissel key={href} label={label} href={href} actief={actief === href} huidig={huidig} lijst={lijst} magMaken={user.rol === "admin" && href === "/crm/outbound"} />;
+    }
+    return (
+      <Link key={href} href={href} aria-current={actief === href ? "page" : undefined} className={actief === href ? "is-actief" : undefined}>
+        {label}
+        {teller(href) ? <span className="crm-badge crm-badge--inline">{teller(href)}</span> : null}
+      </Link>
+    );
+  };
   return (
     <header className="crm-top">
-      <div className="crm-top__links">
-        <CrmWissel huidig={huidig} lijst={lijst} magMaken={user.rol === "admin"} />
-        <nav className="crm-top__hoofd" aria-label="Hoofdmenu">{hoofd.map(link)}</nav>
-      </div>
+      <nav className="crm-top__hoofd" aria-label="Hoofdmenu">{hoofd.map(link)}</nav>
       <div className="crm-top__rechts">
         {user.rol === "setter" && (
           <Link href="/crm/commissie" className={`crm-top__commissie${actief === "/crm/commissie" ? " is-actief" : ""}`}>Mijn commissie</Link>
