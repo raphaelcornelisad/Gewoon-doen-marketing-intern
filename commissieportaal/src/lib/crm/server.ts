@@ -715,23 +715,28 @@ export async function importLeads(user: CrmUser, bron: { url?: string; csv?: str
   const herkomst = `Geïmporteerd (${bron.bestandsnaam ?? bronNaam})`;
   for (let k = 0; k < nieuw.length; k += 200) {
     const blok = nieuw.slice(k, k + 200);
-    const fases = blok.map((l) => faseUitStatus(l.status, l.notitie));
+    const fases = blok.map((l) => {
+      const f = faseUitStatus(l.status, l.notitie);
+      return l.rood && f !== "klant" ? "niet_benaderen" : f;
+    });
     const ins = (check(
       await db()
         .from("crm_contacts")
         .insert(
-          blok.map(({ status: _s, notitie: _n, ...l }, i) => ({
+          blok.map(({ status: _s, notitie: _n, rood, ...l }, i) => ({
             ...l,
             bron: bronNaam,
             belpogingen: fases[i] === "nieuw" ? 0 : 1,
-            niet_benaderen: fases[i] === "niet_benaderen",
+            niet_benaderen: fases[i] === "niet_benaderen" || !!rood,
+            niet_benaderen_reden: rood ? "Rood gemarkeerd in de leadlijst" : fases[i] === "niet_benaderen" ? "Volgens de lijst" : null,
+            tags: rood ? ["Geen contact opnemen"] : [],
           })),
         )
         .select("id"),
     ) ?? []) as { id: string }[];
     ins.forEach((c, i) => idVoor.set(blok[i], c.id));
     check(await db().from("crm_opportunities").insert(ins.map((c, i) => ({ contact_id: c.id, pijplijn: "outbound", fase: fases[i], fase_sinds: nu }))));
-    const ingepland = ins.filter((_, i) => fases[i] === "ingepland");
+    const ingepland = ins.filter((_, i) => fases[i] === "ingepland" && !blok[i].rood);
     if (ingepland.length) check(await db().from("crm_opportunities").insert(ingepland.map((c) => ({ contact_id: c.id, pijplijn: "sales", fase: "ingepland", fase_sinds: nu }))));
     const acts: Record<string, unknown>[] = [];
     ins.forEach((c, i) => {

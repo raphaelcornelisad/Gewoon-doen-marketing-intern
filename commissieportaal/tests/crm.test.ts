@@ -158,3 +158,11 @@ describe("eerder bewerkte leadlijst (status/notitie)", () => {
     expect(r.uniek[0]).toMatchObject({ status: "Geen interesse/geen match", notitie: "Intern marketing team" });
   });
 });
+
+describe("rode rijen", () => {
+  it("rood gemarkeerde rij wordt herkend", () => {
+    const cel = (v: string, rood = false) => ({ formattedValue: v, effectiveFormat: rood ? { backgroundColor: { red: 1 } } : { backgroundColor: { red: 1, green: 1, blue: 1 } } });
+    const r = parseLeadSheet({ sheets: [{ properties: { title: "rotterdam" }, data: [{ rowData: [{ values: [cel("NAME OF BUSINESS"), cel("Contact number")] }, { values: [cel("Sun & Skin", true), cel("103419251")] }, { values: [cel("Ella Clinics"), cel("31107850428")] }] }] }] });
+    expect(r.leads.map((l) => [l.salon_naam, l.rood])).toEqual([["Sun & Skin", true], ["Ella Clinics", false]]);
+  });
+});

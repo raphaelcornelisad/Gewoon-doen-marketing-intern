@@ -15,7 +15,7 @@ export const FASES: Record<Pijplijn, { key: string; label: string }[]> = {
     { key: "klant", label: "Klant geworden" },
     { key: "niet_geinteresseerd", label: "Niet geïnteresseerd" },
     { key: "ongeldig_nummer", label: "Ongeldig nummer" },
-    { key: "niet_benaderen", label: "Niet meer benaderen" },
+    { key: "niet_benaderen", label: "Afgewezen (geen contact)" },
   ],
   sales: [
     { key: "ingepland", label: "Ingepland" },
@@ -126,6 +126,8 @@ export interface ImportLead {
   status?: string | null;
   /** Notitie uit de lijst */
   notitie?: string | null;
+  /** Rij is rood gemarkeerd in de sheet = geen contact opnemen */
+  rood?: boolean;
 }
 
 type Veld = "salon_naam" | "contactpersoon" | "telefoon" | "email" | "website" | "adres" | "postcode" | "stad" | "provincie" | "type_bedrijf" | "behandelingen" | "bron_url" | "extern_id" | "status" | "notitie";
@@ -182,7 +184,7 @@ const GENERIEKE_TAB = /^(blad|sheet|tabblad)\s*\d*$|^(leads?|leadlijst|data|impo
 const key = (s: string) => normalizeName(s).replace(/[_]/g, " ").replace(/[^a-z0-9 -]/g, "").replace(/\s+/g, " ").trim();
 
 /** Leest rijen (eerste rij met herkenbare kolommen = kop). Tabnaam wordt behandeling als die kolom ontbreekt. */
-export function parseLeadRows(rows: string[][], tab = ""): { leads: ImportLead[]; reden: string | null } {
+export function parseLeadRows(rows: string[][], tab = "", roodRij: boolean[] = []): { leads: ImportLead[]; reden: string | null } {
   let header = -1;
   let cols: Partial<Record<Veld, number>> = {};
   for (let i = 0; i < Math.min(rows.length, 10); i++) {
@@ -221,7 +223,7 @@ export function parseLeadRows(rows: string[][], tab = ""): { leads: ImportLead[]
   const tabBehandeling = !tab || tabIsPlaats || GENERIEKE_TAB.test(tab.trim()) ? [] : splitBehandelingen(tab);
   const get = (r: string[], k: Veld) => (cols[k] === undefined ? "" : (r[cols[k]!] ?? "").trim());
   const leads: ImportLead[] = [];
-  for (const r of rows.slice(header + 1)) {
+  for (const [ri, r] of rows.slice(header + 1).entries()) {
     const salon = get(r, "salon_naam");
     if (!salon) continue;
     const stad = get(r, "stad") || tabPlaats;
@@ -256,6 +258,7 @@ export function parseLeadRows(rows: string[][], tab = ""): { leads: ImportLead[]
       extern_id: get(r, "extern_id") || null,
       status: get(r, "status") || null,
       notitie: get(r, "notitie") || null,
+      rood: !!roodRij[header + 1 + ri],
     });
   }
   return { leads, reden: null };
@@ -269,8 +272,14 @@ export function parseLeadSheet(s: ApiSpreadsheet): { leads: ImportLead[]; overge
   const overgeslagen: { tab: string; reden: string }[] = [];
   for (const sheet of s.sheets ?? []) {
     const tab = sheet.properties?.title ?? "";
-    const rows = (sheet.data?.[0]?.rowData ?? []).map((r) => (r.values ?? []).map((c) => (c.formattedValue ?? "").trim()));
-    const r = parseLeadRows(rows, tab);
+    const rowData = sheet.data?.[0]?.rowData ?? [];
+    const rows = rowData.map((r) => (r.values ?? []).map((c) => (c.formattedValue ?? "").trim()));
+    // Rood gemarkeerde rij (eerste cel rood) = geen contact opnemen.
+    const rood = rowData.map((r) => {
+      const bg = r.values?.[0]?.effectiveFormat?.backgroundColor;
+      return !!bg && (bg.red ?? 0) > 0.8 && (bg.green ?? 0) < 0.45 && (bg.blue ?? 0) < 0.45;
+    });
+    const r = parseLeadRows(rows, tab, rood);
     if (r.reden) overgeslagen.push({ tab, reden: r.reden });
     leads.push(...r.leads);
   }
