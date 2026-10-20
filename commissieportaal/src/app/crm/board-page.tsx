@@ -209,7 +209,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
           cards={board}
           waardes={waardes}
           alleTags={opties.tags}
-          setters={user.rol === "admin" ? setters.filter((x) => x.actief && (pijplijn === "outbound" || x.rol === "setter")).map((x) => ({ id: x.id, naam: x.naam })) : null}
+          setters={user.rol === "admin" ? setters.filter((x) => x.actief).map((x) => ({ id: x.id, naam: x.naam })) : null}
           rol={user.rol === "admin" ? "admin" : "setter"}
         />
       )}

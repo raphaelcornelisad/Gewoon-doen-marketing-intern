@@ -78,7 +78,7 @@ const periodesTot = (start: string, vandaag: string) =>
 export function gewenst(input: { setters: SetterIn[]; afspraken: AfspraakIn[]; deals: DealIn[]; regels: Regels; vandaag: string }): Regel[] {
   const { regels: r } = input;
   const out: Regel[] = [];
-  // Alleen echte setters verdienen commissie (salesmedewerkers zoals Raphael niet).
+  // Alleen echte setters verdienen commissie (salesmedewerkers zoals Raphaël niet).
   const setters = new Map(input.setters.filter((s) => s.rol === "setter").map((s) => [s.id, s]));
 
   for (const s of input.setters) {
