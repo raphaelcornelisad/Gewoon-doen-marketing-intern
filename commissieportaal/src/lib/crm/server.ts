@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { acqSetters, type AcqSetter } from "../acquisitie/server";
 import { getAcqSetter } from "../auth/acq-session";
@@ -25,6 +26,7 @@ import {
   type ImportLead,
   type Pijplijn,
 } from "./core";
+import { syncOpvolging, syncTaak } from "./google";
 import { herbereken } from "./grootboek";
 import { provincieVoor } from "./provincies";
 import { huidigeCrmId } from "./werkruimte";
@@ -440,6 +442,7 @@ export async function moveOpp(user: CrmUser, oppId: string, fase: string, extra:
     if (user.setter) await wijsToe(o.contact, user.setter.id, user.email);
     if (fase === "niet_benaderen") {
       check(await db().from("crm_contacts").update({ niet_benaderen: true, niet_benaderen_reden: "Fase Niet meer benaderen", volgende_opvolging_op: null }).eq("id", o.contact_id));
+      after(() => syncOpvolging(o.contact_id));
     }
   }
 
@@ -596,6 +599,7 @@ export async function updateContact(user: CrmUser, id: string, input: ContactInp
     data.eigenaar_id = input.eigenaar_id || null;
     if (input.eigenaar_id && !c.oorspronkelijke_setter_id) data.oorspronkelijke_setter_id = input.eigenaar_id;
   }
+  if (input.volgende_opvolging_op !== undefined || input.niet_benaderen !== undefined || input.eigenaar_id !== undefined) after(() => syncOpvolging(id));
   try {
     check(await db().from("crm_contacts").update({ ...data, updated_at: new Date().toISOString() }).eq("id", id));
   } catch (e) {
@@ -640,7 +644,8 @@ export async function addTask(user: CrmUser, contactId: string, titel: string, v
   const c = await getContact(contactId);
   if (!titel.trim()) throw new CrmError("Geef de taak een titel.");
   if (vervaltOp && Number.isNaN(Date.parse(vervaltOp))) throw new CrmError("Ongeldige datum.");
-  check(await db().from("crm_tasks").insert({ contact_id: c.id, titel: titel.trim().slice(0, 300), vervalt_op: vervaltOp || null, toegewezen_aan: user.setter?.id ?? c.eigenaar_id, door: user.email }));
+  const taak = check(await db().from("crm_tasks").insert({ contact_id: c.id, titel: titel.trim().slice(0, 300), vervalt_op: vervaltOp || null, toegewezen_aan: user.setter?.id ?? c.eigenaar_id, door: user.email }).select("id").single()) as { id: string };
+  if (vervaltOp) after(() => syncTaak(taak.id));
   await log({ contact_id: c.id, ...actor(user), type: "taak", tekst: `Taak: ${titel.trim()}` });
 }
 
@@ -649,6 +654,7 @@ export async function completeTask(user: CrmUser, taskId: string, gedaan: boolea
   if (!t) throw new CrmError("Onbekende taak.", 404);
   if (user.rol !== "admin" && t.toegewezen_aan && t.toegewezen_aan !== user.setter.id) throw new CrmError("Deze taak is van iemand anders.", 403);
   check(await db().from("crm_tasks").update({ gedaan_op: gedaan ? new Date().toISOString() : null }).eq("id", t.id));
+  after(() => syncTaak(t.id));
   await log({ contact_id: t.contact_id, ...actor(user), type: "taak", tekst: `${gedaan ? "Afgerond" : "Heropend"}: ${t.titel}` });
 }
 

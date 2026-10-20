@@ -1,7 +1,9 @@
 import "server-only";
+import { after } from "next/server";
 import { db } from "../supabase/server";
 import { crmSettings } from "./calendly";
 import { UITKOMSTEN, type Uitkomst } from "./core";
+import { syncOpvolging } from "./google";
 import { twilioStatus } from "./twilio";
 import { huidigeCrmId } from "./werkruimte";
 import { actor, check, CrmError, getContact, log, OPP_COLS, wijsToe, zetFase, type CrmUser, type Opp } from "./server";
@@ -115,6 +117,7 @@ export async function registreerUitkomst(user: CrmUser, callId: string, input: U
       })
       .eq("id", c.id),
   );
+  after(() => syncOpvolging(c.id));
   if (u.key === "niet_benaderen") {
     check(await db().from("crm_consents").insert(["whatsapp", "sms", "email", "bellen"].map((k) => ({ contact_id: c.id, kanaal: k, status: "ingetrokken", bron: "Niet meer benaderen (gesprek)", vastgelegd_door: user.email }))));
   }

@@ -65,6 +65,7 @@ export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: st
           <div className="crm-menu__lijst">
             <span className="small muted crm-menu__email">{user.email}</span>
             {user.rol === "setter" && <Link href="/crm/overzicht">Mijn cijfers</Link>}
+            <Link href="/crm/koppelingen">Koppelingen (Google Agenda)</Link>
             <form action={user.rol === "admin" ? "/api/admin/logout" : "/api/acquisitie/logout"} method="post">
               <button type="submit" className="linkbutton">Uitloggen</button>
             </form>

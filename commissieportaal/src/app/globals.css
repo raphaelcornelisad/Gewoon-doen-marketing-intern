@@ -589,3 +589,8 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 /* Accountaanvragen */
 .crm-aanvraag { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .crm-aanvraag__knoppen { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* Koppelingen */
+.crm-koppeling { display: flex; justify-content: space-between; gap: 16px; align-items: center; flex-wrap: wrap; }
+.crm-koppeling h2 { display: flex; gap: 8px; align-items: center; margin-top: 0; }
+.crm-koppeling__knoppen { display: flex; gap: 8px; }

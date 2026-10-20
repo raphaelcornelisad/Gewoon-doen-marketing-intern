@@ -5,6 +5,7 @@ import { acqPeriodFor } from "@/lib/acquisitie/period";
 import { acqSetters } from "@/lib/acquisitie/server";
 import { formatEuro } from "@/lib/commission";
 import { openAanvragen } from "@/lib/crm/aanvragen";
+import { googleAan, koppeling } from "@/lib/crm/google";
 import { agenda } from "@/lib/crm/agenda";
 import { faseLabel } from "@/lib/crm/core";
 import { herbereken, ledger, totalen } from "@/lib/crm/grootboek";
@@ -39,6 +40,7 @@ export default async function Dashboard() {
     db().from("crm_messages").select("contact_id", { count: "exact", head: true }).eq("richting", "in").eq("gelezen_door_team", false),
   ]);
   const aanvraagAantal = user.rol === "admin" ? await openAanvragen().catch(() => 0) : 0;
+  const agendaOntbreekt = user.rol === "setter" && googleAan() && !(await koppeling(user.setter.id).catch(() => null));
   const naam = new Map(setters.map((s) => [s.id, s.naam]));
   const mijn = user.rol === "setter" ? cards.filter((c) => c.contact.eigenaar_id === user.setter.id) : cards;
   const vandaag = filterCards(mijn, { weergave: "vandaag" }, user).length;
@@ -57,6 +59,11 @@ export default async function Dashboard() {
   return (
     <>
       <CrmBar user={user} actief="/crm" open={{ beoordelen: reviews.count ?? 0, inbox: inbox.count ?? 0 }} />
+      {agendaOntbreekt && (
+        <div className="alert">
+          <strong>Koppel je Google Agenda.</strong> Dat is verplicht: zonder koppeling kun je geen belsessie starten. <a href="/api/google/start">Nu koppelen →</a>
+        </div>
+      )}
       {user.rol === "admin" && aanvraagAantal > 0 && (
         <div className="notice">
           <strong>{aanvraagAantal === 1 ? "1 nieuwe accountaanvraag" : `${aanvraagAantal} nieuwe accountaanvragen`}</strong>{" "}

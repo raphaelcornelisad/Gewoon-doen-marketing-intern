@@ -8,6 +8,7 @@ import { faseLabel, UITKOMSTEN } from "@/lib/crm/core";
 import { contactDetail, requireCrmUser } from "@/lib/crm/server";
 import { twilioStatus } from "@/lib/crm/twilio";
 import { SessieBalk } from "@/components/crm/sessie-balk";
+import { googleAan, koppeling } from "@/lib/crm/google";
 import { huidigeSessie } from "@/lib/crm/sessies";
 
 export const metadata: Metadata = { title: "Bellen · CRM" };
@@ -24,6 +25,22 @@ export default async function Bellen({ searchParams }: { searchParams: Promise<{
         <CrmBar user={user} actief="/crm/bellen" />
         <h1>Bellen</h1>
         <p className="lead">De belwachtrij is voor setters. Als admin kun je leads bekijken in Outbound.</p>
+      </>
+    );
+  }
+  // Verplicht: eerst Google Agenda koppelen, zodat terugbelmomenten in de eigen agenda komen.
+  if (googleAan() && !(await koppeling(user.setter.id))) {
+    return (
+      <>
+        <CrmBar user={user} actief="/crm/bellen" />
+        <h1>Bellen</h1>
+        <section className="sb sb--uit">
+          <div>
+            <strong>Koppel eerst je Google Agenda</strong>
+            <span className="small muted">Dat is verplicht voordat je gaat bellen: elk terugbelmoment dat je plant, komt dan automatisch met een herinnering in je eigen agenda.</span>
+          </div>
+          <a className="button crm-belknop" href="/api/google/start">Koppel Google Agenda</a>
+        </section>
       </>
     );
   }
