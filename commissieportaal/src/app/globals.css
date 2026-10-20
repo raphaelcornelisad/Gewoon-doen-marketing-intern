@@ -542,3 +542,42 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 .fm-terug { border: 0; background: transparent; color: #007aff; font-size: 14px; cursor: pointer; padding: 4px 6px; }
 .fm-zoek { width: calc(100% - 8px); margin: 4px; border: 0; background: #f2f2f4; border-radius: 9px; padding: 8px 10px; font-size: 14px; }
 @media (max-width: 600px) { .fm-paneel { position: fixed; left: 12px; right: 12px; top: auto; bottom: 12px; width: auto; max-height: 70dvh; } }
+
+/* Belsessie-balk (setter) */
+.sb { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; padding: 14px 18px; margin: 14px 0; border-radius: 16px; background: #f5f5f7; border: 1px solid #e6e6e9; }
+.sb > div:first-child { display: grid; gap: 2px; }
+.sb--uit { justify-content: space-between; }
+.sb--uit .crm-belknop { width: auto; }
+.sb-tijd { display: flex !important; align-items: center; gap: 10px; }
+.sb-klok { font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.sb-stip { flex-shrink: 0; margin: 0 4px; width: 10px; height: 10px; border-radius: 50%; background: #34c759; box-shadow: 0 0 0 4px rgba(52,199,89,.18); animation: sb-puls 1.6s ease-in-out infinite; }
+.sb-stip.is-pauze { background: #ff9f0a; box-shadow: 0 0 0 4px rgba(255,159,10,.18); animation: none; }
+@keyframes sb-puls { 50% { box-shadow: 0 0 0 7px rgba(52,199,89,.08); } }
+.sb-tellers, .sb-samenvatting { display: flex; gap: 10px; flex-wrap: wrap; }
+.sb-teller { background: #fff; border-radius: 12px; padding: 8px 14px; min-width: 78px; display: grid; text-align: center; }
+.sb-teller__waarde { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.sb-teller__label { font-size: 12px; color: #6e6e73; }
+.sb-knoppen { display: flex; gap: 8px; margin-left: auto; }
+.sb--pauze { background: #fff8eb; border-color: #ffe2b0; }
+
+/* Belsessies (beheer): kalender + details */
+.bs { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .bs { grid-template-columns: 420px minmax(0, 1fr); align-items: start; } }
+.bs-kop { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; text-transform: capitalize; }
+.bs-kop a { font-size: 22px; padding: 2px 10px; border-radius: 8px; text-decoration: none; color: var(--tekst); }
+.bs-kop a:hover { background: var(--vlak); }
+.bs-raster { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.bs-weekdag { font-size: 12px; color: #8a8a8e; text-align: center; padding-bottom: 4px; }
+.bs-dag { aspect-ratio: 1; border-radius: 10px; display: grid; align-content: center; justify-items: center; gap: 2px; text-decoration: none; color: var(--tekst); font-size: 14px; }
+.bs-dag:hover { background: var(--vlak); }
+.bs-dag.heeft { background: #eef8f0; }
+.bs-dag.is-vandaag .bs-dag__nr { color: var(--primair); font-weight: 800; }
+.bs-dag.is-gekozen { background: var(--zwart); color: #fff; }
+.bs-dag__info { font-size: 10px; color: #3d8b4f; }
+.bs-dag.is-gekozen .bs-dag__info { color: #cfe9d5; }
+.bs-detail h2 { margin-top: 0; text-transform: capitalize; }
+.bs-setter { border-top: 1px solid var(--rand); padding-top: 14px; margin-top: 14px; display: grid; gap: 10px; }
+.bs-setter__kop { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.bs-cijfers { display: flex; gap: 8px; flex-wrap: wrap; }
+.bs-cijfers div { background: var(--vlak); border-radius: 12px; padding: 8px 14px; display: grid; font-size: 12px; color: #6e6e73; text-align: center; min-width: 80px; }
+.bs-cijfers span { font-size: 22px; font-weight: 800; color: var(--tekst); }

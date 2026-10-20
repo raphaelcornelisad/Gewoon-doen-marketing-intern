@@ -16,6 +16,7 @@ export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: st
         : [["/crm", "Dashboard"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]];
   const beheer: L[] = [
     ["/crm/overzicht", "Cijfers"],
+    ["/crm/belsessies", "Belsessies"],
     ["/crm/commissie", "Commissie setters"],
     ["/crm/beoordelen", "Beoordelen"],
     ["/crm/contacten", "Contacten"],

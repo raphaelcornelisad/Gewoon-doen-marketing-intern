@@ -7,14 +7,15 @@ import { crmSettings } from "@/lib/crm/calendly";
 import { faseLabel, UITKOMSTEN } from "@/lib/crm/core";
 import { contactDetail, requireCrmUser } from "@/lib/crm/server";
 import { twilioStatus } from "@/lib/crm/twilio";
-import { StartSessie } from "./start";
+import { SessieBalk } from "@/components/crm/sessie-balk";
+import { huidigeSessie } from "@/lib/crm/sessies";
 
 export const metadata: Metadata = { title: "Bellen · CRM" };
 export const dynamic = "force-dynamic";
 
 const vul = (t: string, v: Record<string, string>) => t.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k: string) => v[k] ?? "");
 
-export default async function Bellen({ searchParams }: { searchParams: Promise<{ lead?: string; sessie?: string; leeg?: string }> }) {
+export default async function Bellen({ searchParams }: { searchParams: Promise<{ lead?: string; sessie?: string; leeg?: string; ingediend?: string }> }) {
   const user = await requireCrmUser();
   const sp = await searchParams;
   if (user.rol !== "setter") {
@@ -27,7 +28,7 @@ export default async function Bellen({ searchParams }: { searchParams: Promise<{
     );
   }
   const leadId = sp.lead ?? (await huidigeReservering(user));
-  const [d, script, s] = await Promise.all([leadId ? contactDetail(leadId, user) : Promise.resolve(null), actiefScript(), crmSettings()]);
+  const [d, script, s, sessie] = await Promise.all([leadId ? contactDetail(leadId, user) : Promise.resolve(null), actiefScript(), crmSettings(), huidigeSessie(user)]);
   const provider = twilioStatus().voice ? "twilio" : "handmatig";
 
   if (!d) {
@@ -36,8 +37,9 @@ export default async function Bellen({ searchParams }: { searchParams: Promise<{
         <CrmBar user={user} actief="/crm/bellen" />
         <h1>Bellen</h1>
         <p className="lead">Start een belsessie: het CRM opent steeds de eerstvolgende geschikte lead (achterstallige opvolging eerst, dan je eigen leads, dan nieuwe). Iedere lead wordt tijdens het bellen voor jou gereserveerd.</p>
+        {sp.ingediend && <div className="notice">Je belsessie is ingediend. Het overzicht staat bij de admin.</div>}
         {sp.leeg && <div className="notice">Er staan nu geen leads klaar in de wachtrij.</div>}
-        <StartSessie />
+        <SessieBalk start={sessie} leadId={null} />
         <p className="small muted">
           {provider === "twilio" ? "Bellen gaat via de browser (Twilio)." : "Twilio is nog niet aangesloten: je belt met je eigen telefoon en registreert daarna de uitkomst. Er is dan geen providerstatus of opname."}
           {s.auto_doorbellen ? ` Na elke afronding gaat het CRM na ${s.aftel_sec} seconden automatisch naar de volgende lead (pauzeerbaar).` : ""}
@@ -52,6 +54,7 @@ export default async function Bellen({ searchParams }: { searchParams: Promise<{
   return (
     <>
       <CrmBar user={user} actief="/crm/bellen" />
+      <SessieBalk start={sessie} leadId={k.id} />
       {!d.magOutbound && <div className="alert">Deze lead is van een andere setter.</div>}
       <div className="crm-bel-layout">
         <BelScherm
@@ -74,7 +77,7 @@ export default async function Bellen({ searchParams }: { searchParams: Promise<{
           provider={provider}
           autoDoorbellen={s.auto_doorbellen}
           aftelSec={s.aftel_sec}
-          sessie={sp.sessie === "1"}
+          sessie={sp.sessie === "1" || !!sessie}
         />
         <div className="crm-form">
           {script && (
