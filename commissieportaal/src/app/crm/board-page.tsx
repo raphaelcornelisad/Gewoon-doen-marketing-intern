@@ -135,7 +135,10 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
                 : "Ingeplande leads. Registreer verschenen/no-show in de agenda of op de leadkaart; bij Offerte en Geaccepteerd vraagt het CRM de verplichte gegevens."}
           </p>
         </div>
-        {pijplijn === "outbound" && user.rol !== "sales" && <Link href="/crm/nieuw" className="button button--small">+ Lead toevoegen</Link>}
+        <span className="crm-toolbar__knoppen">
+          {pijplijn === "outbound" && user.rol === "setter" && <Link href="/crm/bellen" className="button button--small crm-belknop">📞 Start belsessie</Link>}
+          {pijplijn === "outbound" && user.rol !== "sales" && <Link href="/crm/nieuw" className="button button--small">+ Lead toevoegen</Link>}
+        </span>
       </div>
       <Filters action={path} f={f} query={sp} opties={opties} setters={user.rol === "admin" ? setters : undefined} pijplijn={pijplijn} tabel={tabel} views={mijnViews.filter((v) => v.pijplijn === pijplijn)} />
       <p className="small muted">{cards.length} van {alle.length} leads</p>

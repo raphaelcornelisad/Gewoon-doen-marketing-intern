@@ -581,3 +581,5 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 .bs-cijfers { display: flex; gap: 8px; flex-wrap: wrap; }
 .bs-cijfers div { background: var(--vlak); border-radius: 12px; padding: 8px 14px; display: grid; font-size: 12px; color: #6e6e73; text-align: center; min-width: 80px; }
 .bs-cijfers span { font-size: 22px; font-weight: 800; color: var(--tekst); }
+.crm-toolbar__knoppen { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.crm-toolbar__knoppen .crm-belknop { width: auto; }
