@@ -98,7 +98,7 @@ export default async function Instellingen() {
 
       <section className="crm-form">
         <h2>Gebruikers</h2>
-        <p className="small muted" style={{ margin: 0 }}>Setters en salesmedewerkers loggen in via {base}/acquisitie/login met hun e-mailadres.</p>
+        <p className="small muted" style={{ margin: 0 }}>Setters en salesmedewerkers loggen in via {base}/crm/login met hun e-mailadres.</p>
         {(data.gebruikers as Parameters<typeof GebruikerForm>[0]["g"][]).map((x) => <GebruikerForm key={x!.id} g={x} />)}
         <details><summary>Nieuwe gebruiker</summary><GebruikerForm /></details>
       </section>

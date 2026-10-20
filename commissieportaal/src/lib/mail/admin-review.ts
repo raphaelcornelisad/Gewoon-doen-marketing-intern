@@ -64,7 +64,7 @@ export function buildAdminReviewMail(d: SubmittedDetails, o: AdminReviewOptions)
   const html = `<!doctype html><html lang="nl"><body style="margin:0;background:${C.vlak};font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:${C.tekst};font-size:15px;line-height:1.5">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${C.vlak}"><tr><td align="center" style="padding:24px 12px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:${C.wit};border:1px solid ${C.rand};border-radius:10px;overflow:hidden">
-<tr><td style="background:${C.zwart};color:${C.wit};padding:14px 20px;font-weight:700">Gewoon Doen <span style="color:${C.primair}">Marketing</span> <span style="color:#BDBDBD;font-weight:400;font-size:13px">· ${esc(brand.appNaam)}</span></td></tr>
+<tr><td style="background:${C.zwart};color:${C.wit};padding:14px 20px;font-weight:700">Gewoon Doen <span style="color:${C.primair}">Marketing</span> <span style="color:#BDBDBD;font-weight:400;font-size:13px">· ${esc(brand.portaalNaam)}</span></td></tr>
 <tr><td style="padding:20px">
 <p style="margin:0 0 6px"><span style="display:inline-block;background:#FEF4D6;color:#8A5A00;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:999px">Moet gecontroleerd worden</span></p>
 <h1 style="font-size:22px;margin:8px 0 4px">${esc(d.setterNaam)}</h1>

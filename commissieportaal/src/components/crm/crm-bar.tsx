@@ -4,7 +4,7 @@ import type { CrmUser } from "@/lib/crm/server";
 export function CrmBar({ user, actief, open }: { user: CrmUser; actief: string; open?: { beoordelen?: number; inbox?: number } }) {
   const links: [string, string][] =
     user.rol === "admin"
-      ? [["/crm", "Dashboard"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/overzicht", "Cijfers"], ["/crm/commissie", "Commissie"], ["/crm/beoordelen", "Beoordelen"], ["/crm/import", "Importeren"], ["/crm/instellingen", "Instellingen"], ["/admin", "Salonsetters"]]
+      ? [["/crm", "Dashboard"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/overzicht", "Cijfers"], ["/crm/commissie", "Commissie"], ["/crm/beoordelen", "Beoordelen"], ["/crm/import", "Importeren"], ["/crm/instellingen", "Instellingen"], ["/admin", "Commissieportaal (salons)"]]
       : user.rol === "setter"
         ? [["/crm", "Mijn dashboard"], ["/crm/bellen", "Bellen"], ["/crm/outbound", "Leads"], ["/crm/sales", "Mijn ingeplande"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/commissie", "Mijn commissie"]]
         : [["/crm", "Dashboard"], ["/crm/sales", "Mijn salesleads"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]];

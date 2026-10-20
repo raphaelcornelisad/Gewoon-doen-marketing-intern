@@ -2,7 +2,9 @@
 // Logo: zet het bestand in /public en vul het pad in (bv. "/logo.svg"). null = tekstlogo.
 export const brand = {
   naam: "Gewoon Doen Marketing",
-  appNaam: "Commissieportaal",
+  appNaam: "CRM",
+  /** Module voor salonsetters (indienen leadlijst + commissie) */
+  portaalNaam: "Commissieportaal",
   logo: null as string | null,
   kleuren: {
     primair: "#A03030",

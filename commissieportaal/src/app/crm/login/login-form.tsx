@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function AcqLoginForm() {
+export function CrmLoginForm() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -10,7 +10,7 @@ export function AcqLoginForm() {
     e.preventDefault();
     setBusy(true);
     const email = new FormData(e.currentTarget).get("email");
-    const res = await fetch("/api/acquisitie/login", {
+    const res = await fetch("/api/crm/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),

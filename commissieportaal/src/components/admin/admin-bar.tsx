@@ -4,6 +4,7 @@ export function AdminBar({ email }: { email: string }) {
   return (
     <div className="admin-bar">
       <span className="admin-bar__links">
+        <Link href="/crm">← CRM</Link>
         <Link href="/admin">Salonsetters</Link>
         <Link href="/crm/commissie">Commissie acquisitie</Link>
         <Link href="/admin/reactivatie">Reactivatie</Link>

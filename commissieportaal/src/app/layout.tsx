@@ -7,7 +7,7 @@ import "./globals.css";
 const body = Figtree({ subsets: ["latin"], variable: "--font-body", weight: ["400", "600", "700", "800"] });
 
 export const metadata: Metadata = {
-  title: `${brand.appNaam} · ${brand.naam}`,
+  title: `Gewoon Sales Doen`,
   robots: { index: false, follow: false },
 };
 
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header className="site-header">
           <div className="site-header__inner">
-            <Link href="/indienen" className="logo" aria-label={brand.naam}>
+            <Link href="/" className="logo" aria-label={brand.naam}>
               {brand.logo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={brand.logo} alt={brand.naam} />
@@ -33,7 +33,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </>
               )}
             </Link>
-            <span className="site-header__app">{brand.appNaam}</span>
           </div>
         </header>
         <main className="page">{children}</main>

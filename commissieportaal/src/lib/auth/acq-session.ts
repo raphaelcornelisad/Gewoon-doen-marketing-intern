@@ -16,7 +16,7 @@ export async function getAcqSetter(): Promise<AcqSetter | null> {
 
 export async function requireAcqSetter(): Promise<AcqSetter> {
   const s = await getAcqSetter();
-  if (!s) redirect("/acquisitie/login");
+  if (!s) redirect("/crm/login");
   return s;
 }
 

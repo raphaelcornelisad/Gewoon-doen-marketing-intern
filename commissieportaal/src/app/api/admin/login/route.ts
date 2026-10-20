@@ -26,9 +26,9 @@ export async function POST(req: Request) {
     )}`;
     await sendMail({
       to: adminEmail,
-      subject: `Inloggen ${brand.appNaam}`,
+      subject: `Inloggen Gewoon Sales Doen`,
       text: `Klik op deze link om in te loggen (1 uur geldig):\n${link}\n\nNiet aangevraagd? Dan kun je deze mail negeren.`,
-      html: `<p>Klik op de knop om in te loggen in het ${brand.appNaam}. De link is 1 uur geldig.</p>
+      html: `<p>Klik op de knop om in te loggen in het Gewoon Sales Doen. De link is 1 uur geldig.</p>
 <p><a href="${link}" style="display:inline-block;background:${brand.kleuren.primair};color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:8px">Inloggen</a></p>
 <p style="color:#5C5C5C;font-size:13px">Niet aangevraagd? Dan kun je deze mail negeren.</p>`,
     });

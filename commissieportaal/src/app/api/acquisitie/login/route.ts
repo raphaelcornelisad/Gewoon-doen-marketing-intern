@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const link = `${env("APP_URL").replace(/\/$/, "")}/api/acquisitie/callback?token_hash=${encodeURIComponent(data.properties.hashed_token)}`;
     await sendMail({
       to: setter.email,
-      subject: `Inloggen ${brand.appNaam}`,
+      subject: `Inloggen Gewoon Sales Doen`,
       text: `Hoi ${setter.naam},\n\nKlik op deze link om in te loggen (1 uur geldig):\n${link}`,
       html: `<p>Hoi ${setter.naam},</p><p>Klik op de knop om in te loggen. De link is 1 uur geldig.</p><p><a href="${link}" style="display:inline-block;background:${brand.kleuren.primair};color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:8px">Inloggen</a></p>`,
     });

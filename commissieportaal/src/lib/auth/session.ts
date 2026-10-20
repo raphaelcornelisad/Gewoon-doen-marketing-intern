@@ -17,7 +17,7 @@ export async function getAdmin(): Promise<{ email: string } | null> {
 /** Gebruik bovenaan elke admin-pagina en admin-route. */
 export async function requireAdmin(): Promise<{ email: string }> {
   const admin = await getAdmin();
-  if (!admin) redirect("/admin/login");
+  if (!admin) redirect("/crm/login");
   return admin;
 }
 
