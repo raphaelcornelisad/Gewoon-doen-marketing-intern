@@ -93,8 +93,8 @@ export default async function Dashboard() {
         <section className="card">
           <h2>Komende afspraken</h2>
           {komend.length === 0 && <p className="muted">Geen afspraken de komende 14 dagen.</p>}
-          <ul className="crm-timeline">
-            {komend.filter((a) => a.status === "gepland").slice(0, 12).map((a) => (
+          <ul className="crm-timeline crm-timeline--scroll">
+            {komend.filter((a) => a.status === "gepland").map((a) => (
               <li key={a.id}>
                 <span className="small muted">{afspraakTekst(a.start_op)} · {a.type === "kennismaking" ? "kennismaking" : "salesgesprek"}{user.rol !== "setter" && a.setter_id ? ` · ${naam.get(a.setter_id)}` : ""}</span>
                 <div><Link href={`/crm/lead/${a.contact.id}?tab=afspraken`}>{a.contact.salon_naam}</Link></div>
@@ -105,15 +105,15 @@ export default async function Dashboard() {
         <section className="card">
           <h2>{user.rol === "setter" ? "Mijn geboekte calls" : "Call geboekt"}</h2>
           {sales.length === 0 && <p className="muted">Nog geen leads in sales.</p>}
-          <ul className="crm-timeline">
-            {sales.slice(0, 12).map((c) => (
+          <ul className="crm-timeline crm-timeline--scroll">
+            {sales.map((c) => (
               <li key={c.id}>
                 <span className="small muted">{faseLabel("sales", c.fase)}{c.waarde_cents ? ` · ${formatEuro(c.waarde_cents)}` : ""}</span>
                 <div><Link href={`/crm/lead/${c.contact_id}`}>{c.contact.salon_naam}</Link></div>
               </li>
             ))}
           </ul>
-          {sales.length > 12 && <Link href="/crm/sales" className="small">Alle {sales.length} bekijken →</Link>}
+          {sales.length > 0 && <Link href="/crm/sales" className="small">{sales.length} leads · open het bord →</Link>}
         </section>
       </div>
       {user.rol === "admin" && st && (

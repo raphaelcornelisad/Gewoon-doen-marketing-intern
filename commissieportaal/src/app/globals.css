@@ -505,3 +505,6 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 .crm-bel__knoppen { display: flex; gap: 8px; flex-wrap: wrap; }
 .wa-toestemming { justify-self: center; width: min(100%, 520px); }
 .wa-toestemming .crm-form { margin: 0; }
+
+/* Dashboardlijsten: eigen scrollbalk i.p.v. een afgekapte lijst */
+.crm-timeline--scroll { max-height: 520px; overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; }
