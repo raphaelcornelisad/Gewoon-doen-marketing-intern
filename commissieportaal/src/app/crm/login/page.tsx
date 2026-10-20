@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCrmUser } from "@/lib/crm/server";
 import { CrmLoginForm } from "./login-form";
@@ -18,6 +19,7 @@ export default async function CrmLogin({ searchParams }: { searchParams: Promise
       </section>
       {fout && <div className="alert" role="alert">{fout === "verlopen" ? "Deze inloglink is verlopen of al gebruikt. Vraag een nieuwe aan." : "Ongeldige inloglink."}</div>}
       <CrmLoginForm />
+      <p className="small"><Link href="/crm/aanmelden">Nog geen account? Account aanvragen →</Link></p>
     </>
   );
 }

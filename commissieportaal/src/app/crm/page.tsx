@@ -4,6 +4,7 @@ import { CrmBar } from "@/components/crm/crm-bar";
 import { acqPeriodFor } from "@/lib/acquisitie/period";
 import { acqSetters } from "@/lib/acquisitie/server";
 import { formatEuro } from "@/lib/commission";
+import { openAanvragen } from "@/lib/crm/aanvragen";
 import { agenda } from "@/lib/crm/agenda";
 import { faseLabel } from "@/lib/crm/core";
 import { herbereken, ledger, totalen } from "@/lib/crm/grootboek";
@@ -37,6 +38,7 @@ export default async function Dashboard() {
     user.rol === "admin" ? db().from("crm_review").select("id", { count: "exact", head: true }).eq("status", "open") : Promise.resolve({ count: 0 }),
     db().from("crm_messages").select("contact_id", { count: "exact", head: true }).eq("richting", "in").eq("gelezen_door_team", false),
   ]);
+  const aanvraagAantal = user.rol === "admin" ? await openAanvragen().catch(() => 0) : 0;
   const naam = new Map(setters.map((s) => [s.id, s.naam]));
   const mijn = user.rol === "setter" ? cards.filter((c) => c.contact.eigenaar_id === user.setter.id) : cards;
   const vandaag = filterCards(mijn, { weergave: "vandaag" }, user).length;
@@ -55,6 +57,12 @@ export default async function Dashboard() {
   return (
     <>
       <CrmBar user={user} actief="/crm" open={{ beoordelen: reviews.count ?? 0, inbox: inbox.count ?? 0 }} />
+      {user.rol === "admin" && aanvraagAantal > 0 && (
+        <div className="notice">
+          <strong>{aanvraagAantal === 1 ? "1 nieuwe accountaanvraag" : `${aanvraagAantal} nieuwe accountaanvragen`}</strong>{" "}
+          <Link href="/crm/aanvragen">Bekijken en goedkeuren →</Link>
+        </div>
+      )}
       <div className="crm-toolbar">
         <div>
           <h1>{user.rol === "admin" ? "Dashboard" : `Hoi ${user.setter.naam}`}</h1>

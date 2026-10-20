@@ -585,3 +585,7 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 .crm-toolbar__knoppen .crm-belknop { width: auto; }
 .sb-oefen { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border-top: 1px dashed #d8d8dc; padding-top: 10px; }
 .crm-voorbeeld { background: #fff8c4; border: 1px solid #f2e38a; border-radius: 12px; padding: 10px 14px; margin: 12px 0; font-size: 14px; }
+
+/* Accountaanvragen */
+.crm-aanvraag { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.crm-aanvraag__knoppen { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

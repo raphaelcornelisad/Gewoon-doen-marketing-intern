@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CrmUser } from "@/lib/crm/server";
+import { openAanvragen } from "@/lib/crm/aanvragen";
 import { huidigeWerkruimte, werkruimtes } from "@/lib/crm/werkruimte";
 import { CrmWissel } from "./crm-wissel";
 import { VergrendelKnop } from "./vergrendel";
@@ -20,12 +21,14 @@ export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: st
     ["/crm/commissie", "Commissie setters"],
     ["/crm/beoordelen", "Beoordelen"],
     ["/crm/contacten", "Contacten"],
+    ["/crm/aanvragen", "Accountaanvragen"],
     ["/crm/import", "Leads importeren"],
     ["/crm/instellingen", "Instellingen"],
     ["/admin", "Commissieportaal (salons)"],
   ];
-  const [huidig, lijst] = await Promise.all([huidigeWerkruimte(), werkruimtes()]);
-  const teller = (href: string) => (href === "/crm/beoordelen" ? open?.beoordelen : href === "/crm/inbox" ? open?.inbox : undefined);
+  const [huidig, lijst, aanvragen] = await Promise.all([huidigeWerkruimte(), werkruimtes(), user.rol === "admin" ? openAanvragen().catch(() => 0) : Promise.resolve(0)]);
+  const teller = (href: string) => (href === "/crm/beoordelen" ? open?.beoordelen : href === "/crm/inbox" ? open?.inbox : href === "/crm/aanvragen" ? aanvragen : undefined);
+  const beheerTeller = (open?.beoordelen ?? 0) + aanvragen;
   const link = ([href, label]: L) => {
     // CRM Outbound / CRM Sales: eerst het CRM kiezen (Laser ontharen, ...), dan het bord openen.
     if (href === "/crm/outbound" || href === "/crm/sales") {
@@ -48,7 +51,7 @@ export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: st
         {user.rol === "admin" && (
           <details className="crm-menu">
             <summary className={beheer.some(([h]) => h === actief) ? "is-actief" : undefined}>
-              Beheer{open?.beoordelen ? <span className="crm-badge crm-badge--inline">{open.beoordelen}</span> : null}
+              Beheer{beheerTeller ? <span className="crm-badge crm-badge--inline">{beheerTeller}</span> : null}
             </summary>
             <div className="crm-menu__lijst">
               <span className="small muted crm-menu__email">🔒 Vraagt het beheerwachtwoord</span>
