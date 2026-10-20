@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "../supabase/server";
 import { abonneerWebhook } from "./calendly";
+import { normPhone } from "./core";
 import { check, CrmError, type CrmUser } from "./server";
 
 function alleenAdmin(u: CrmUser) {
@@ -73,12 +74,14 @@ export async function slaTemplateOp(user: CrmUser, t: { id?: string; naam: strin
   else check(await db().from("crm_templates").insert(rij));
 }
 
-export async function slaGebruikerOp(user: CrmUser, g: { id?: string; naam: string; email: string; rol: string; start_datum: string; actief: boolean; utm_source?: string }) {
+export async function slaGebruikerOp(user: CrmUser, g: { id?: string; naam: string; email: string; rol: string; start_datum: string; actief: boolean; utm_source?: string; beller_nummer?: string }) {
   alleenAdmin(user);
   const email = g.email?.trim().toLowerCase();
   if (!g.naam?.trim() || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new CrmError("Naam en geldig e-mailadres zijn verplicht.");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(g.start_datum)) throw new CrmError("Ongeldige startdatum.");
-  const rij = { naam: g.naam.trim(), email, rol: g.rol === "sales" ? "sales" : "setter", start_datum: g.start_datum, actief: !!g.actief, utm_source: g.utm_source?.trim().toLowerCase() || null };
+  const beller = g.beller_nummer?.trim() ? normPhone(g.beller_nummer) : null;
+  if (g.beller_nummer?.trim() && !beller) throw new CrmError("Ongeldig belnummer. Gebruik bijv. 06 12345678.");
+  const rij = { naam: g.naam.trim(), email, rol: g.rol === "sales" ? "sales" : "setter", start_datum: g.start_datum, actief: !!g.actief, utm_source: g.utm_source?.trim().toLowerCase() || null, beller_nummer: beller };
   const r = g.id ? await db().from("acq_setters").update(rij).eq("id", g.id) : await db().from("acq_setters").insert(rij);
   if (r.error) throw new CrmError(/duplicate/.test(r.error.message) ? "Dit e-mailadres of deze UTM-code bestaat al." : r.error.message);
 }

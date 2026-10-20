@@ -47,7 +47,7 @@ export default async function Instellingen() {
           <Status aan={calendlyToken} tekst="Calendly API (CALENDLY_TOKEN in Vercel)" />
           <Status aan={!!s.calendly_webhook_uri} tekst={`Calendly-webhook (boekingen, annuleringen, verplaatsingen, no-shows) → ${base}/api/webhooks/calendly`} />
           <Status aan={!!s.calendly_url_kennismaking && !!s.calendly_url_sales} tekst="Calendly-links per gesprekstype" />
-          <Status aan={tw.voice} tekst="Bellen in de browser + opnames (Twilio Voice: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET, TWILIO_TWIML_APP_SID, TWILIO_CALLER_ID)" />
+          <Status aan={tw.voice} tekst="Bellen in de browser + opnames (Twilio Voice: TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_API_KEY_SID, TWILIO_API_KEY_SECRET, TWILIO_TWIML_APP_SID; het nummer dat de klant ziet stel je per gebruiker in onder Gebruikers)" />
           <Status aan={tw.sms} tekst="Sms (TWILIO_SMS_FROM)" />
           <Status aan={tw.whatsapp} tekst="WhatsApp Business Platform via Twilio (TWILIO_WHATSAPP_FROM + goedgekeurde templates)" />
           <Status aan={an.transcriptie} tekst="Transcriptie (DEEPGRAM_API_KEY)" />

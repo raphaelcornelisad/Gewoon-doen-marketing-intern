@@ -16,6 +16,8 @@ export interface AcqSetter {
   start_datum: string;
   actief: boolean;
   rol: "setter" | "sales";
+  /** Eigen 06 (E.164) dat de klant ziet bij bellen vanuit het CRM */
+  beller_nummer: string | null;
 }
 
 export async function acqSetters(): Promise<AcqSetter[]> {

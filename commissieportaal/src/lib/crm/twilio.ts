@@ -11,7 +11,7 @@ export function twilioStatus() {
   const basis = !!(e("TWILIO_ACCOUNT_SID") && e("TWILIO_AUTH_TOKEN"));
   return {
     basis,
-    voice: basis && !!(e("TWILIO_API_KEY_SID") && e("TWILIO_API_KEY_SECRET") && e("TWILIO_TWIML_APP_SID") && e("TWILIO_CALLER_ID")),
+    voice: basis && !!(e("TWILIO_API_KEY_SID") && e("TWILIO_API_KEY_SECRET") && e("TWILIO_TWIML_APP_SID")),
     sms: basis && !!e("TWILIO_SMS_FROM"),
     whatsapp: basis && !!e("TWILIO_WHATSAPP_FROM"),
   };
@@ -20,6 +20,7 @@ export function twilioStatus() {
 const host = () => (e("TWILIO_REGION") ? `https://api.${e("TWILIO_REGION")}.twilio.com` : "https://api.twilio.com");
 const auth = () => `Basic ${Buffer.from(`${e("TWILIO_ACCOUNT_SID")}:${e("TWILIO_AUTH_TOKEN")}`).toString("base64")}`;
 export const authToken = () => e("TWILIO_AUTH_TOKEN");
+/** Standaard belnummer als een setter nog geen eigen (geverifieerd) nummer heeft. */
 export const callerId = () => e("TWILIO_CALLER_ID");
 
 export function tokenVoor(identity: string) {

@@ -136,14 +136,14 @@ export function TemplateForm({ tpl }: { tpl?: Tpl }) {
   );
 }
 
-type G = { id?: string; naam: string; email: string; rol: string; start_datum: string; actief: boolean; utm_source?: string | null };
+type G = { id?: string; naam: string; email: string; rol: string; start_datum: string; actief: boolean; utm_source?: string | null; beller_nummer?: string | null };
 
 export function GebruikerForm({ g }: { g?: G }) {
   const o = useOpslaan();
   const [v, setV] = useState<G>(g ?? { naam: "", email: "", rol: "setter", start_datum: new Date().toISOString().slice(0, 10), actief: true, utm_source: "" });
   const t = (k: keyof G) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setV({ ...v, [k]: e.target.value });
   return (
-    <form className="crm-form card" onSubmit={(e) => { e.preventDefault(); void o.run("gebruiker", { ...v, utm_source: v.utm_source ?? "" }); }}>
+    <form className="crm-form card" onSubmit={(e) => { e.preventDefault(); void o.run("gebruiker", { ...v, utm_source: v.utm_source ?? "", beller_nummer: v.beller_nummer ?? "" }); }}>
       <div className="row">
         <label>Naam<input value={v.naam} onChange={t("naam")} required /></label>
         <label>E-mail (inlog)<input type="email" value={v.email} onChange={t("email")} required /></label>
@@ -151,6 +151,7 @@ export function GebruikerForm({ g }: { g?: G }) {
         <label>Startdatum<input type="date" value={v.start_datum} onChange={t("start_datum")} required /></label>
       </div>
       <div className="row">
+        <label>Belnummer dat de klant ziet (eigen 06, eerst verifiëren in Twilio)<input type="tel" value={v.beller_nummer ?? ""} onChange={t("beller_nummer")} placeholder="06 12345678" /></label>
         <label>Oude persoonlijke Calendly-code (optioneel)<input value={v.utm_source ?? ""} onChange={t("utm_source")} /></label>
         <label className="crm-check"><input type="checkbox" checked={v.actief} onChange={(e) => setV({ ...v, actief: e.target.checked })} /> Actief</label>
       </div>
