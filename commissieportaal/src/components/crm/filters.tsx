@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { BoardFilter } from "@/lib/crm/server";
+import { FilterMenu, type FilterGroep } from "./filter-menu";
 import { BewaarWeergave } from "./weergaven";
 
 const SNEL: [NonNullable<BoardFilter["weergave"]>, string][] = [
@@ -35,6 +36,15 @@ export function Filters({
     const s = p.toString();
     return s ? `${action}?${s}` : action;
   };
+  const lijst = (v: string[]) => v.map((x) => ({ value: x, label: x }));
+  const groepen: FilterGroep[] = [
+    { key: "provincie", label: "Provincie", opties: [...lijst(opties.provincies), { value: "onbekend", label: "Provincie onbekend" }] },
+    { key: "stad", label: "Plaats", opties: lijst(opties.steden) },
+    ...(opties.types.length ? [{ key: "type", label: "Type bedrijf", opties: lijst(opties.types) }] : []),
+    ...(opties.tags.length ? [{ key: "tag", label: "Tag", opties: lijst(opties.tags) }] : []),
+    { key: "heeft", label: "Gegevens", opties: [{ value: "telefoon", label: "Met telefoon" }, { value: "website", label: "Met website" }, { value: "email", label: "Met e-mail" }] },
+    ...(setters ? [{ key: "setter", label: pijplijn === "sales" ? "Setter (tag)" : "Eigenaar", opties: [...setters.map((x) => ({ value: x.id, label: x.naam })), { value: "geen", label: "Niemand" }] }] : []),
+  ];
   const huidig = new URLSearchParams(Object.entries(query).filter(([k, v]) => v && k !== "toon") as [string, string][]).toString();
   return (
     <div className="crm-form">
@@ -54,48 +64,15 @@ export function Filters({
           <Link href={qs({ toon: "gesprekken" })} aria-current={query.toon === "gesprekken" ? "page" : undefined}>Gesprekken</Link>
         </span>
       </div>
-      <form className="crm-filters" action={action} method="get">
-        {f.weergave && <input type="hidden" name="weergave" value={f.weergave} />}
-        {query.toon && <input type="hidden" name="toon" value={query.toon} />}
-        <input name="q" defaultValue={f.q ?? ""} placeholder="Zoek salon, naam, telefoon, website…" aria-label="Zoeken" />
-        {opties.types.length > 0 && (
-          <select name="type" defaultValue={f.type ?? ""} aria-label="Type bedrijf">
-            <option value="">Alle types</option>
-            {opties.types.map((b) => <option key={b}>{b}</option>)}
-          </select>
-        )}
-        <select name="provincie" defaultValue={f.provincie ?? ""} aria-label="Regio">
-          <option value="">Alle provincies</option>
-          {opties.provincies.map((b) => <option key={b}>{b}</option>)}
-          <option value="onbekend">Onbekend</option>
-        </select>
-        <select name="stad" defaultValue={f.stad ?? ""} aria-label="Plaats">
-          <option value="">Alle plaatsen</option>
-          {opties.steden.map((b) => <option key={b}>{b}</option>)}
-        </select>
-        {opties.tags.length > 0 && (
-          <select name="tag" defaultValue={f.tag ?? ""} aria-label="Tag">
-            <option value="">Alle tags</option>
-            {opties.tags.map((b) => <option key={b}>{b}</option>)}
-          </select>
-        )}
-        <select name="heeft" defaultValue={f.heeft ?? ""} aria-label="Gegevens aanwezig">
-          <option value="">Alle gegevens</option>
-          <option value="telefoon">Met telefoon</option>
-          <option value="website">Met website</option>
-          <option value="email">Met e-mail</option>
-        </select>
-        {setters && (
-          <select name="setter" defaultValue={f.setter ?? ""} aria-label="Setter">
-            <option value="">{pijplijn === "sales" ? "Alle setters (tag)" : "Alle eigenaren"}</option>
-            {setters.map((s) => <option key={s.id} value={s.id}>{s.naam}</option>)}
-            <option value="geen">Niemand</option>
-          </select>
-        )}
-        <button type="submit" className="button button--small">Filter</button>
-        <Link href={action} className="small">Wissen</Link>
+      <div className="crm-filters crm-filters--strak">
+        <form className="fm-zoekbalk" action={action} method="get" role="search">
+          {Object.entries(query).filter(([k, v]) => v && k !== "q").map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input name="q" defaultValue={f.q ?? ""} placeholder="Zoek salon, naam, telefoon, website…" aria-label="Zoeken" />
+        </form>
+        <FilterMenu action={action} query={query} groepen={groepen} />
         <BewaarWeergave pijplijn={pijplijn} query={huidig} />
-      </form>
+      </div>
     </div>
   );
 }
