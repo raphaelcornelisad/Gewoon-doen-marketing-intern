@@ -391,7 +391,12 @@ function assertMag(o: Opp & { contact: Contact }, u: CrmUser) {
 export async function ensureSales(contactId: string, setterId: string | null, door: string): Promise<Opp> {
   const bestaand = check(await db().from("crm_opportunities").select(OPP_COLS).eq("contact_id", contactId).eq("pijplijn", "sales").maybeSingle()) as Opp | null;
   if (bestaand) return bestaand;
-  const r = await db().from("crm_opportunities").insert({ contact_id: contactId, pijplijn: "sales", fase: "ingepland", setter_id: setterId }).select(OPP_COLS).single();
+  const verkopers = (await acqSetters()).filter((s) => s.actief && s.rol === "sales");
+  const r = await db()
+    .from("crm_opportunities")
+    .insert({ contact_id: contactId, pijplijn: "sales", fase: "ingepland", setter_id: setterId, verkoper_id: verkopers.length === 1 ? verkopers[0].id : null })
+    .select(OPP_COLS)
+    .single();
   if (r.error && /duplicate key/.test(r.error.message)) {
     return check(await db().from("crm_opportunities").select(OPP_COLS).eq("contact_id", contactId).eq("pijplijn", "sales").single()) as Opp;
   }
@@ -448,6 +453,10 @@ export async function moveOpp(user: CrmUser, oppId: string, fase: string, extra:
   await zetFase(o, fase, user.email, user.setter?.id ?? null);
 
   if (o.pijplijn === "outbound" && fase === "ingepland") await ensureSales(o.contact_id, o.contact.eigenaar_id, user.email);
+  if (o.pijplijn === "sales" && fase === "geaccepteerd") {
+    const ob = check(await db().from("crm_opportunities").select(OPP_COLS).eq("contact_id", o.contact_id).eq("pijplijn", "outbound").maybeSingle()) as Opp | null;
+    if (ob && ob.fase !== "klant") await zetFase(ob, "klant", user.email, null, "Deal geaccepteerd");
+  }
   if (o.pijplijn === "sales") await herbereken(user.email);
   return { ...o, fase };
 }

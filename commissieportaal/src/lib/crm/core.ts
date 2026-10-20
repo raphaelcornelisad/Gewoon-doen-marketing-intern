@@ -12,6 +12,7 @@ export const FASES: Record<Pijplijn, { key: string; label: string }[]> = {
     { key: "terugbellen", label: "Terugbellen" },
     { key: "in_gesprek", label: "In gesprek" },
     { key: "ingepland", label: "Ingepland – naar sales" },
+    { key: "klant", label: "Klant geworden" },
     { key: "niet_geinteresseerd", label: "Niet geïnteresseerd" },
     { key: "ongeldig_nummer", label: "Ongeldig nummer" },
     { key: "niet_benaderen", label: "Niet meer benaderen" },
@@ -47,6 +48,7 @@ export const UITKOMSTEN = [
   { key: "ingepland", label: "Ingepland", fase: null, bereikt: true },
   { key: "niet_geinteresseerd", label: "Niet geïnteresseerd", fase: "niet_geinteresseerd", bereikt: true },
   { key: "ongeldig_nummer", label: "Ongeldig nummer", fase: "ongeldig_nummer", bereikt: false },
+  { key: "al_klant", label: "Is al klant", fase: "klant", bereikt: true },
   { key: "niet_benaderen", label: "Niet meer benaderen", fase: "niet_benaderen", bereikt: true },
 ] as const;
 export type Uitkomst = (typeof UITKOMSTEN)[number]["key"];
@@ -157,6 +159,7 @@ export function faseUitStatus(status: string | null | undefined, notitie?: strin
   const s = (status ?? "").toLowerCase();
   const n = (notitie ?? "").toLowerCase();
   if (!s.trim()) return "nieuw";
+  if (/klant geworden|is klant|al klant|oude klant|^klant/.test(s)) return "klant";
   if (/ingepland/.test(s)) return "ingepland";
   if (/geen interesse|geen match|niet geinteresseerd|niet geïnteresseerd/.test(s)) {
     return /niet in gebruik|niet beschikbaar|bestaat niet|ongeldig/.test(n) ? "ongeldig_nummer" : "niet_geinteresseerd";

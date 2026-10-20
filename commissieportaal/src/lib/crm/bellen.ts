@@ -98,7 +98,7 @@ export async function registreerUitkomst(user: CrmUser, callId: string, input: U
   // Opvolgmoment: expliciet gekozen, of standaard morgen voor niet opgenomen/WAFU.
   let opvolg: string | null | undefined = input.opvolgOp ? new Date(input.opvolgOp).toISOString() : undefined;
   if (opvolg === undefined && (u.key === "niet_opgenomen" || u.key === "wafu")) opvolg = new Date(now.getTime() + 24 * 3600000).toISOString();
-  if (["niet_geinteresseerd", "ongeldig_nummer", "niet_benaderen", "ingepland"].includes(u.key)) opvolg = null;
+  if (["niet_geinteresseerd", "ongeldig_nummer", "niet_benaderen", "ingepland", "al_klant"].includes(u.key)) opvolg = null;
 
   check(
     await db()

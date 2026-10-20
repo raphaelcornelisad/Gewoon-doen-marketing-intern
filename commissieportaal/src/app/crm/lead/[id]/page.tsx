@@ -78,6 +78,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
   const naam = new Map(setters.map((s) => [s.id, s.naam]));
   const actieveSetters = setters.filter((s) => s.actief && s.rol === "setter").map((s) => ({ id: s.id, naam: s.naam }));
   const verkopers = setters.filter((s) => s.actief && s.rol === "sales").map((s) => ({ id: s.id, naam: s.naam }));
+  const tagKeuze = [...actieveSetters, ...verkopers.map((v) => ({ id: v.id, naam: `${v.naam} (geen commissie)` }))];
   const k = d.contact;
   const isAdmin = user.rol === "admin";
   const notities = d.activiteit.filter((a) => a.type === "notitie");
@@ -178,7 +179,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
                   </span>
                   {isAdmin && (
                     <>
-                      <OwnerField contactId={k.id} oppId={d.sales.id} value={d.sales.setter_id ?? ""} setters={actieveSetters} label="Toegeschreven setter (commissie)" soort="setter" />
+                      <OwnerField contactId={k.id} oppId={d.sales.id} value={d.sales.setter_id ?? ""} setters={tagKeuze} label="Ingepland door (setter)" soort="setter" />
                       <OwnerField contactId={k.id} oppId={d.sales.id} value={d.sales.verkoper_id ?? ""} setters={verkopers} label="Salesmedewerker" soort="verkoper" />
                     </>
                   )}

@@ -403,3 +403,11 @@ body:has(.crm) .site-header__inner { max-width: 1440px; }
   .crm-top__rechts .crm-menu:last-child .crm-menu__lijst { left: auto; right: 0; }
 }
 .crm-menu__voet { border-top: 1px solid var(--rand); margin-top: 4px; padding-top: 4px; }
+
+/* Bord: de pagina scrolt niet; elke fase heeft een eigen scroll. */
+.crm-board { height: calc(100dvh - 300px); min-height: 420px; align-items: stretch; }
+.crm-col { min-height: 0; padding: 0; gap: 0; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+.crm-col__kop { display: grid; gap: 4px; padding: 10px 10px 8px; border-bottom: 1px solid var(--rand); background: var(--vlak); }
+.crm-col__meta { margin-top: 0; }
+.crm-col__lijst { overflow-y: auto; overscroll-behavior: contain; display: grid; align-content: start; gap: 8px; padding: 10px; }
+@media (max-width: 700px) { .crm-board { height: calc(100dvh - 220px); } }

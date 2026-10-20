@@ -29,7 +29,7 @@ export interface BoardCard {
 
 type Paneel = { soort: "fase" | "tags" | "notitie" | "eigenaar"; card: BoardCard } | null;
 
-const MAX = 100;
+const MAX = 2000;
 
 export function Board({
   pijplijn,
@@ -104,13 +104,14 @@ export function Board({
                 move(e.dataTransfer.getData("text/plain"), f.key);
               }}
             >
-              <header className="crm-col__head">
-                <span>{f.label}</span>
+              <header className="crm-col__kop">
+                <span className="crm-col__head"><span>{f.label}</span></span>
+                <span className="crm-col__meta">
+                  <span>{col.length} {col.length === 1 ? "lead" : "leads"}</span>
+                  <span>{waardes[f.key] || "€ 0,00"}</span>
+                </span>
               </header>
-              <div className="crm-col__meta">
-                <span>{col.length} {col.length === 1 ? "lead" : "leads"}</span>
-                <span>{waardes[f.key] || "€ 0,00"}</span>
-              </div>
+              <div className="crm-col__lijst">
               {col.slice(0, MAX).map((c) => {
                 const wa = waLink(c.telefoon);
                 const tel = c.telefoon?.replace(/[^\d+]/g, "");
@@ -159,6 +160,7 @@ export function Board({
                 );
               })}
               {col.length > MAX && <span className="small muted">+ {col.length - MAX} meer. Gebruik de filters.</span>}
+              </div>
             </section>
           );
         })}

@@ -151,3 +151,11 @@ describe("beheerwachtwoord", () => {
     expect(veiligPad("https://evil.com")).toBe("/crm");
   });
 });
+
+describe("salesmedewerker als setter-tag", () => {
+  it("levert geen commissie op", () => {
+    const sales = { id: "r1", start_datum: "2026-10-01", actief: true, rol: "sales" };
+    const rs = gewenst({ setters: [S, sales], regels: R, vandaag: "2026-10-30", afspraken: [show(1, { setter_id: "r1" })], deals: [{ id: "d1", contact_id: "c1", fase: "geaccepteerd", waarde_cents: 500000, sluitdatum: "2026-10-20", setter_id: "r1" }] });
+    expect(rs.filter((r) => r.setter_id === "r1")).toEqual([]);
+  });
+});
