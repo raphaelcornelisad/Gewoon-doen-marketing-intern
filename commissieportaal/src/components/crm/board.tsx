@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon, initialen, waLink } from "./icons";
 import { FaseVenster } from "./acties";
 import { post, QuickNote, Sheet, TagEditor } from "./sheet";
@@ -55,10 +55,86 @@ export function Board({
   const [paneel, setPaneel] = useState<Paneel>(null);
   useEffect(() => setCards(initial), [initial]);
 
+  // ---- Slepen met de muis: linkerknop ingedrukt houden op een kaart en naar een andere fase trekken ----
+  const boardRef = useRef<HTMLDivElement>(null);
+  const sleep = useRef<{ id: string; x: number; y: number; dx: number; dy: number; actief: boolean; breedte: number } | null>(null);
+  const netGesleept = useRef(false);
+  const [ghost, setGhost] = useState<{ card: BoardCard; x: number; y: number; breedte: number } | null>(null);
+
+  useEffect(() => {
+    let scroll = 0;
+    const faseOnder = (x: number, y: number) => (document.elementFromPoint(x, y)?.closest("[data-fase]") as HTMLElement | null)?.dataset.fase ?? null;
+    const autoScroll = (x: number, y: number) => {
+      const b = boardRef.current;
+      if (!b) return;
+      const r = b.getBoundingClientRect();
+      const rand = 80;
+      const h = x < r.left + rand ? -18 : x > r.right - rand ? 18 : 0;
+      if (h) b.scrollLeft += h;
+      const lijst = (document.elementFromPoint(x, y)?.closest(".crm-col") as HTMLElement | null)?.querySelector(".crm-col__lijst") as HTMLElement | null;
+      if (lijst) {
+        const lr = lijst.getBoundingClientRect();
+        if (y < lr.top + 50) lijst.scrollTop -= 14;
+        else if (y > lr.bottom - 50) lijst.scrollTop += 14;
+      }
+    };
+    const beweeg = (e: PointerEvent) => {
+      const s = sleep.current;
+      if (!s) return;
+      if (!s.actief) {
+        if (Math.hypot(e.clientX - s.x, e.clientY - s.y) < 6) return;
+        s.actief = true;
+        document.body.classList.add("crm-sleept");
+      }
+      e.preventDefault();
+      const card = cards.find((c) => c.id === s.id);
+      if (card) setGhost({ card, x: e.clientX - s.dx, y: e.clientY - s.dy, breedte: s.breedte });
+      setOver(faseOnder(e.clientX, e.clientY));
+      cancelAnimationFrame(scroll);
+      const lus = () => {
+        autoScroll(e.clientX, e.clientY);
+        scroll = requestAnimationFrame(lus);
+      };
+      scroll = requestAnimationFrame(lus);
+    };
+    const los = (e: PointerEvent) => {
+      const s = sleep.current;
+      sleep.current = null;
+      cancelAnimationFrame(scroll);
+      document.body.classList.remove("crm-sleept");
+      if (!s?.actief) return;
+      netGesleept.current = true;
+      setTimeout(() => (netGesleept.current = false), 50);
+      const doel = faseOnder(e.clientX, e.clientY);
+      setGhost(null);
+      setOver(null);
+      if (doel) void move(s.id, doel);
+    };
+    window.addEventListener("pointermove", beweeg, { passive: false });
+    window.addEventListener("pointerup", los);
+    window.addEventListener("pointercancel", los);
+    return () => {
+      window.removeEventListener("pointermove", beweeg);
+      window.removeEventListener("pointerup", los);
+      window.removeEventListener("pointercancel", los);
+      cancelAnimationFrame(scroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cards]);
+
+  function pakOp(e: React.PointerEvent<HTMLElement>, c: BoardCard) {
+    if (e.button !== 0 || e.pointerType === "touch") return; // aanraakscherm: knop "Fase wijzigen"
+    if ((e.target as HTMLElement).closest("button, .crm-card__actions a")) return; // actieknoppen blijven klikbaar
+    if (c.vergrendeld) return setFout(`${c.salon}: je kunt de fase van deze lead niet aanpassen.`);
+    const r = e.currentTarget.getBoundingClientRect();
+    sleep.current = { id: c.id, x: e.clientX, y: e.clientY, dx: e.clientX - r.left, dy: e.clientY - r.top, actief: false, breedte: r.width };
+  }
+
   async function move(id: string, fase: string) {
     const card = cards.find((c) => c.id === id);
     if (!card || card.fase === fase) return;
     if (card.vergrendeld) return setFout(`${card.salon}: je kunt de fase van deze lead niet aanpassen.`);
+    if (pijplijn === "sales" && (fase === "offerte" || fase === "geaccepteerd")) return setPaneel({ soort: "fase", card }); // vraagt verplichte gegevens
     const vorige = cards;
     setCards(cards.map((c) => (c.id === id ? { ...c, fase } : c)));
     const r = await post(`/api/crm/opp/${id}`, { fase });
@@ -86,24 +162,11 @@ export function Board({
   return (
     <>
       {fout && <div className="alert" role="alert">{fout}</div>}
-      <div className="crm-board">
+      <div className="crm-board" ref={boardRef}>
         {fases.map((f) => {
           const col = cards.filter((c) => c.fase === f.key);
           return (
-            <section
-              key={f.key}
-              className={`crm-col${over === f.key ? " crm-col--over" : ""}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setOver(f.key);
-              }}
-              onDragLeave={() => setOver((o) => (o === f.key ? null : o))}
-              onDrop={(e) => {
-                e.preventDefault();
-                setOver(null);
-                move(e.dataTransfer.getData("text/plain"), f.key);
-              }}
-            >
+            <section key={f.key} data-fase={f.key} className={`crm-col${over === f.key ? " crm-col--over" : ""}`}>
               <header className="crm-col__kop">
                 <span className="crm-col__head"><span>{f.label}</span></span>
                 <span className="crm-col__meta">
@@ -116,7 +179,18 @@ export function Board({
                 const wa = waLink(c.telefoon);
                 const tel = c.telefoon?.replace(/[^\d+]/g, "");
                 return (
-                  <article key={c.id} className="crm-card" draggable={!c.vergrendeld} onDragStart={(e) => e.dataTransfer.setData("text/plain", c.id)}>
+                  <article
+                    key={c.id}
+                    className={`crm-card${ghost?.card.id === c.id ? " crm-card--weg" : ""}${c.vergrendeld ? "" : " crm-card--sleepbaar"}`}
+                    onPointerDown={(e) => pakOp(e, c)}
+                    onClickCapture={(e) => {
+                      if (netGesleept.current) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
+                    onDragStart={(e) => e.preventDefault()}
+                  >
                     <div className="crm-card__top">
                       <Link href={`/crm/lead/${c.contactId}`} className="crm-card__name">{c.salon}</Link>
                       {c.waarde && <span className="crm-card__value">{c.waarde}</span>}
@@ -166,6 +240,15 @@ export function Board({
         })}
       </div>
 
+      {ghost && (
+        <div className="crm-card crm-card--ghost" style={{ left: ghost.x, top: ghost.y, width: ghost.breedte }} aria-hidden="true">
+          <div className="crm-card__top">
+            <strong className="crm-card__name">{ghost.card.salon}</strong>
+            {ghost.card.waarde && <span className="crm-card__value">{ghost.card.waarde}</span>}
+          </div>
+          <div className="crm-card__body">{ghost.card.sub && <span className="small muted">{ghost.card.sub}</span>}</div>
+        </div>
+      )}
       {paneel?.soort === "fase" && <FaseVenster oppId={paneel.card.id} fase={paneel.card.fase} fases={fases} pijplijn={pijplijn} onSluit={sluit} />}
       {paneel?.soort === "tags" && (
         <Sheet titel={`Tags · ${paneel.card.salon}`} onClose={sluit}>
