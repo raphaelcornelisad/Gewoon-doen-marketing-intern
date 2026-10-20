@@ -29,6 +29,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
     heeft: sp.heeft === "telefoon" || sp.heeft === "website" || sp.heeft === "email" ? sp.heeft : undefined,
   };
   const tabel = sp.toon === "tabel";
+  const gesprekken = sp.toon === "gesprekken";
   const [alle, setters, mijnViews] = await Promise.all([loadCards(pijplijn, user), acqSetters(), views(user)]);
   const naam = new Map(setters.map((s) => [s.id, s.naam]));
   const opties = filterOptions(alle);
@@ -42,6 +43,21 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
     for (let i = 0; i < ids.length; i += 300) {
       const { data } = await db().from("crm_appointments").select("contact_id, start_op, status, type").in("contact_id", ids.slice(i, i + 300)).neq("status", "verplaatst").order("start_op", { ascending: false });
       for (const a of (data ?? []) as { contact_id: string; start_op: string; status: string; type: string }[]) if (!afspraken.has(a.contact_id)) afspraken.set(a.contact_id, a);
+    }
+  }
+
+  // Gesprekken (WhatsApp/sms) van de leads in deze pijplijn.
+  const berichten = new Map<string, { laatste: { tekst: string; richting: string; kanaal: string; status: string; created_at: string }; aantal: number; open: number }>();
+  if (gesprekken && cards.length) {
+    const ids = cards.map((c) => c.contact_id);
+    for (let i = 0; i < ids.length; i += 300) {
+      const { data } = await db().from("crm_messages").select("contact_id, tekst, richting, kanaal, status, created_at, gelezen_door_team").in("contact_id", ids.slice(i, i + 300)).order("created_at", { ascending: false }).limit(5000);
+      for (const m of (data ?? []) as { contact_id: string; tekst: string; richting: string; kanaal: string; status: string; created_at: string; gelezen_door_team: boolean }[]) {
+        const g = berichten.get(m.contact_id) ?? { laatste: m, aantal: 0, open: 0 };
+        g.aantal++;
+        if (m.richting === "in" && !m.gelezen_door_team) g.open++;
+        berichten.set(m.contact_id, g);
+      }
     }
   }
 
@@ -103,7 +119,38 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       </div>
       <Filters action={path} f={f} query={sp} opties={opties} setters={user.rol === "admin" ? setters : undefined} pijplijn={pijplijn} tabel={tabel} views={mijnViews.filter((v) => v.pijplijn === pijplijn)} />
       <p className="small muted">{cards.length} van {alle.length} leads</p>
-      {tabel ? (
+      {gesprekken ? (
+        <div className="crm-form">
+          {FASES[pijplijn].map((f) => {
+            const rijen = cards.filter((c) => c.fase === f.key && berichten.has(c.contact_id)).sort((a, b) => berichten.get(b.contact_id)!.laatste.created_at.localeCompare(berichten.get(a.contact_id)!.laatste.created_at));
+            if (!rijen.length) return null;
+            return (
+              <section key={f.key} className="card crm-form">
+                <h2 style={{ margin: 0 }}>{f.label} <span className="muted small">{rijen.length} gesprekken</span></h2>
+                {rijen.map((c) => {
+                  const g = berichten.get(c.contact_id)!;
+                  return (
+                    <Link key={c.id} href={`/crm/inbox?lead=${c.contact_id}`} className="crm-gesprek">
+                      <span className="crm-toolbar">
+                        <strong>{c.contact.salon_naam}</strong>
+                        <span className="small muted">
+                          {kort(g.laatste.created_at)}
+                          {g.open > 0 && <span className="crm-badge crm-badge--inline">{g.open}</span>}
+                        </span>
+                      </span>
+                      <span className="small muted">
+                        {g.laatste.kanaal === "whatsapp" ? "WhatsApp" : "Sms"} · {g.laatste.richting === "in" ? "← " : "→ "}
+                        {g.laatste.tekst.slice(0, 120)} · {g.aantal} berichten
+                      </span>
+                    </Link>
+                  );
+                })}
+              </section>
+            );
+          })}
+          {berichten.size === 0 && <p className="muted">Nog geen gesprekken met leads in deze selectie.</p>}
+        </div>
+      ) : tabel ? (
         <div className="table-wrap card">
           <table className="table">
             <thead>

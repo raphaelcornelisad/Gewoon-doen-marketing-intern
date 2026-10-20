@@ -9,7 +9,6 @@ import {
   AnalyseCorrectie,
   categorieLabel,
   EditableContact,
-  HandmatigeAfspraak,
   NietBenaderen,
   NoteForm,
   OpvolgField,
@@ -312,7 +311,6 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
                 {(isAdmin || d.magSales) && user.rol !== "setter" && <AfspraakKnoppen id={a.id} status={a.status} />}
               </article>
             ))}
-            {isAdmin && <HandmatigeAfspraak contactId={k.id} setters={actieveSetters} />}
           </section>
         )}
 

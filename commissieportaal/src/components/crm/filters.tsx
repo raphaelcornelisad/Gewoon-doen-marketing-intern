@@ -49,12 +49,14 @@ export function Filters({
           <Link key={v.id} href={`${action}?${v.query}`} className={`crm-chip crm-chip--btn${huidig === v.query ? " crm-chip--tag" : ""}`}>★ {v.naam}</Link>
         ))}
         <span className="crm-weergave">
-          <Link href={qs({ toon: undefined })} aria-current={!tabel ? "page" : undefined}>Bord</Link> · <Link href={qs({ toon: "tabel" })} aria-current={tabel ? "page" : undefined}>Tabel</Link>
+          <Link href={qs({ toon: undefined })} aria-current={!tabel && query.toon !== "gesprekken" ? "page" : undefined}>Bord</Link> ·{" "}
+          <Link href={qs({ toon: "tabel" })} aria-current={tabel ? "page" : undefined}>Tabel</Link> ·{" "}
+          <Link href={qs({ toon: "gesprekken" })} aria-current={query.toon === "gesprekken" ? "page" : undefined}>Gesprekken</Link>
         </span>
       </div>
       <form className="crm-filters" action={action} method="get">
         {f.weergave && <input type="hidden" name="weergave" value={f.weergave} />}
-        {tabel && <input type="hidden" name="toon" value="tabel" />}
+        {query.toon && <input type="hidden" name="toon" value={query.toon} />}
         <input name="q" defaultValue={f.q ?? ""} placeholder="Zoek salon, naam, telefoon, website…" aria-label="Zoeken" />
         {opties.types.length > 0 && (
           <select name="type" defaultValue={f.type ?? ""} aria-label="Type bedrijf">

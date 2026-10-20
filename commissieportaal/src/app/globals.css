@@ -371,3 +371,34 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
 .crm-tegel { display: grid; gap: 4px; text-decoration: none; color: var(--tekst); }
 a.crm-tegel:hover { border-color: var(--primair); }
 .crm-tegel__waarde { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ---------- CRM-navigatie ---------- */
+.crm-top { display: flex; justify-content: space-between; align-items: center; gap: 16px 32px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--rand); }
+.crm-top a { text-decoration: none; }
+.crm-top__hoofd { display: flex; flex-wrap: wrap; gap: 4px; }
+.crm-top__hoofd a { padding: 8px 12px; border-radius: 8px; font-weight: 700; color: var(--tekst); font-size: 15px; }
+.crm-top__hoofd a:hover { background: var(--vlak); }
+.crm-top__hoofd a.is-actief { background: var(--zwart); color: var(--wit); }
+.crm-top__rechts { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+.crm-top__commissie { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--primair); color: var(--primair); font-weight: 800; font-size: 14px; }
+.crm-top__commissie.is-actief, .crm-top__commissie:hover { background: var(--primair); color: var(--wit); }
+.crm-menu { position: relative; }
+.crm-menu summary { list-style: none; cursor: pointer; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--rand); font-weight: 700; font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
+.crm-menu summary::-webkit-details-marker { display: none; }
+.crm-menu summary::after { content: "▾"; font-size: 11px; color: var(--tekst-zacht); }
+.crm-menu summary.is-actief { border-color: var(--zwart); }
+.crm-menu__gebruiker { background: var(--vlak); }
+.crm-menu__lijst { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 230px; background: var(--wit); border: 1px solid var(--rand); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.12); padding: 6px; display: grid; }
+.crm-menu__lijst a, .crm-menu__lijst .linkbutton { padding: 9px 10px; border-radius: 8px; color: var(--tekst); font-weight: 600; font-size: 14px; text-align: left; }
+.crm-menu__lijst a:hover { background: var(--vlak); }
+.crm-menu__lijst a.is-actief { color: var(--primair); }
+.crm-menu__lijst form { margin: 0; border-top: 1px solid var(--rand); margin-top: 4px; padding-top: 4px; }
+.crm-menu__email { padding: 6px 10px; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .crm-top__rechts { margin-left: 0; } }
+.crm-gesprek { display: grid; gap: 2px; padding: 10px 0; border-top: 1px solid var(--rand); color: var(--tekst); text-decoration: none; }
+.crm-gesprek:hover strong { color: var(--primair); }
+body:has(.crm) .site-header__inner { max-width: 1440px; }
+@media (max-width: 700px) {
+  .crm-menu__lijst { left: 0; right: auto; }
+  .crm-top__rechts .crm-menu:last-child .crm-menu__lijst { left: auto; right: 0; }
+}

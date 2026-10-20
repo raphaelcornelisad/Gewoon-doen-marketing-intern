@@ -491,11 +491,3 @@ export async function koppelBoeking(user: CrmUser, reviewId: string, keuze: { co
   await herbereken(user.email);
 }
 
-/** Admin: afspraak die buiten Calendly is gemaakt handmatig vastleggen. */
-export async function handmatigeAfspraak(user: CrmUser, contactId: string, type: Gesprekstype, start: string, setterId: string | null) {
-  if (user.rol !== "admin") throw new CrmError("Alleen de admin.", 403);
-  if (Number.isNaN(Date.parse(start))) throw new CrmError("Ongeldige datum/tijd.");
-  const uri = `handmatig:${randomBytes(8).toString("hex")}`;
-  await verwerkBoeking({ uri, status: "active" }, { uri, name: type === "kennismaking" ? (await crmSettings()).calendly_event_kennismaking : (await crmSettings()).calendly_event_sales, start_time: new Date(start).toISOString() }, { contactId, setterId, door: user.email });
-  check(await db().from("crm_appointments").update({ bevestiging_via: "geen (handmatig)", herinnering_via: "geen (handmatig)" }).eq("calendly_invitee_uri", uri));
-}

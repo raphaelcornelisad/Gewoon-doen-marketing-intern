@@ -399,28 +399,3 @@ export function AnalyseCorrectie({ callId, samenvatting, vervolgstap, bezwaren }
   );
 }
 
-export function HandmatigeAfspraak({ contactId, setters }: { contactId: string; setters: { id: string; naam: string }[] }) {
-  const a = useAction();
-  const [open, setOpen] = useState(false);
-  const [v, setV] = useState({ type: "kennismaking", start: "", setterId: "" });
-  if (!open) return <button type="button" className="linkbutton small" onClick={() => setOpen(true)}>Afspraak buiten Calendly vastleggen</button>;
-  return (
-    <form
-      className="crm-form card"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const r = await a.run("/api/crm/afspraak", { contactId, type: v.type, start: new Date(v.start).toISOString(), setterId: v.setterId || null }, "Afspraak vastgelegd.");
-        if (r.ok) setOpen(false);
-      }}
-    >
-      <div className="row">
-        <label>Type<select value={v.type} onChange={(e) => setV({ ...v, type: e.target.value })}><option value="kennismaking">Kennismaking</option><option value="salesgesprek">Salesgesprek</option></select></label>
-        <label>Datum en tijd<input type="datetime-local" required value={v.start} onChange={(e) => setV({ ...v, start: e.target.value })} /></label>
-        <label>Toegeschreven setter<select value={v.setterId} onChange={(e) => setV({ ...v, setterId: e.target.value })}><option value="">Geen</option>{setters.map((s) => <option key={s.id} value={s.id}>{s.naam}</option>)}</select></label>
-      </div>
-      <span className="small muted">Alleen voor afspraken die niet via Calendly liepen. Bevestiging en herinnering moet je dan zelf regelen.</span>
-      <button type="submit" className="button button--small" disabled={a.busy}>Vastleggen</button>
-      <Msg m={a.msg} />
-    </form>
-  );
-}

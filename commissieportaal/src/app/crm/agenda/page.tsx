@@ -54,7 +54,7 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<R
       <div className="crm-toolbar">
         <div>
           <h1>Agenda</h1>
-          <p className="lead">Alleen afspraken die aan CRM-leads gekoppeld zijn. Ververst automatisch.</p>
+          <p className="lead">Alleen afspraken uit de gekoppelde Calendly-events ({s.calendly_event_kennismaking}{s.calendly_url_sales ? ` en ${s.calendly_event_sales}` : ""}) bij CRM-leads. Ververst automatisch.</p>
         </div>
         <span className="small muted">
           Laatste Calendly-sync: {s.laatste_sync ? new Date(s.laatste_sync).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" }) : "nog nooit"}
