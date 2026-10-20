@@ -508,3 +508,11 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 
 /* Dashboardlijsten: eigen scrollbalk i.p.v. een afgekapte lijst */
 .crm-timeline--scroll { max-height: 520px; overflow-y: auto; padding-right: 6px; overscroll-behavior: contain; }
+
+/* Contactenpagina (Beheer) */
+.crm-contacten .crm-filters input[type="search"] { flex: 1 1 260px; }
+.crm-contacten__tabel { overflow: auto; max-height: calc(100dvh - 330px); margin-top: 8px; }
+.crm-contacten__tabel thead th { position: sticky; top: 0; background: var(--wit); z-index: 1; }
+.crm-contacten__tabel td { vertical-align: top; }
+.crm-nowrap { white-space: nowrap; }
+.crm-rij--rood td { background: #FCE4E2; }
