@@ -19,6 +19,7 @@ export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: st
     ["/crm/commissie", "Commissie setters"],
     ["/crm/beoordelen", "Beoordelen"],
     ["/crm/import", "Leads importeren"],
+    ["/crm/funnels", "Funnel-aanvragen"],
     ["/crm/instellingen", "Instellingen"],
     ["/admin", "Commissieportaal (salons)"],
   ];
