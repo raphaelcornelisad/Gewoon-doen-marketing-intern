@@ -53,7 +53,10 @@ export default async function Belsessies({ searchParams }: { searchParams: Promi
     <>
       <CrmBar user={user} actief="/crm/belsessies" />
       <h1>Belsessies</h1>
-      <p className="lead">Elke ingediende belsessie per dag. Klik op een dag om per setter te zien wat er is gebeurd.</p>
+      <div className="crm-toolbar">
+        <p className="lead">Elke ingediende belsessie per dag. Klik op een dag om per setter te zien wat er is gebeurd.</p>
+        <Link href="/crm/belsessies/voorbeeld" className="button button--small button--ghost">Bekijk als setter (voorbeeld)</Link>
+      </div>
       <div className="bs">
         <section className="card bs-kalender">
           <header className="bs-kop">
