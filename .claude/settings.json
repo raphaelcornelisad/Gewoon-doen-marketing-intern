@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git push -u origin claude/sweet-volta-npfokx)"
+    ]
+  },
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "De eigenaar staat toe dat Claude database-wijzigingen voor het CRM direct toepast op Supabase-project pwhlbwhknpzuvvinweha via api.supabase.com, als dat bij een taak van de gebruiker hoort.",
+      "De eigenaar staat toe dat Claude pusht naar branch claude/sweet-volta-npfokx (dit zet sales.gewoondoenmarketing.nl live), als dat bij een taak van de gebruiker hoort."
+    ]
+  }
+}
