@@ -76,3 +76,21 @@ describe("crm core", () => {
     expect(automatischVooruit("salesgesprek", "ingepland")).toBe(false);
   });
 });
+
+describe("import zoals de Dutch-leadlijst", () => {
+  it("herkent Engelse kopjes, tabblad = plaats en telefoons zonder voorloopnul", () => {
+    const r = parseLeadRows(
+      [
+        ["NAME OF BUSINESS", "Contact number", "EMAIL ADDRESS", "Status", "Notitie"],
+        ["THE LAZER BAR", "31614434367", "info@thelaserbar.nl", "", ""],
+        ["Your Laser Clinic", "702250669", "info@yourlaserclinic.nl", "", ""],
+        ["Emori Skin Clinic", "-36597841", "info@emoriskinclinic.nl", "", ""],
+        ["Lash & Laser Clinic", "06 48404020", "info@lashandlaserclinic.nl", "", ""],
+        ["Gloow Rotterdam", "", "info@gloow.nl", "", ""],
+      ],
+      "rotterdam",
+    );
+    expect(r.leads.map((l) => l.telefoon_norm)).toEqual(["+31614434367", "+31702250669", null, "+31648404020", null]);
+    expect(r.leads[0]).toMatchObject({ salon_naam: "THE LAZER BAR", email: "info@thelaserbar.nl", stad: "Rotterdam", provincie: "Zuid-Holland", behandelingen: [] });
+  });
+});

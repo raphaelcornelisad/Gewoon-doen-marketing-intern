@@ -56,9 +56,15 @@ export const faseLabel = (p: Pijplijn, f: string) => FASES[p].find((x) => x.key 
 
 /** Telefoonnummer → +31… (zelfde regels als de Calendly-klantsleutel). */
 export function normPhone(v: string | null | undefined): string | null {
-  if (!v) return null;
-  const d = v.replace(/[^\d+]/g, "").replace(/^0031/, "+31").replace(/^31(?=\d{9}$)/, "+31").replace(/^0(?=\d{9}$)/, "+31");
-  return d.length >= 8 ? d : null;
+  if (!v || /^\s*-/.test(v)) return null; // negatief getal = kapotte cel
+  const d = v
+    .replace(/[^\d+]/g, "")
+    .replace(/^00(?=[1-9])/, "+")
+    .replace(/^31(?=\d{9}$)/, "+31")
+    .replace(/^32(?=\d{8,9}$)/, "+32")
+    .replace(/^0(?=\d{9}$)/, "+31")
+    .replace(/^(?=[1-9]\d{8}$)/, "+31"); // 9 cijfers zonder voorloopnul (Excel)
+  return /^\+\d{10,13}$/.test(d) ? d : null;
 }
 
 /** Domein uit een website (zonder www.), voor ontdubbelen. */
@@ -118,10 +124,10 @@ type Veld = "salon_naam" | "contactpersoon" | "telefoon" | "email" | "website" |
 
 // Kopjes na normalisatie (kleine letters, alleen a-z0-9, spatie en -). Dekt eigen sheets, Outscraper en Apify.
 const KOLOMMEN: Record<Veld, RegExp> = {
-  salon_naam: /^(salon|salon ?naam|bedrijf|bedrijfsnaam|kliniek|clinic|naam salon|naam bedrijf|business|company|naam|name|title)$/,
+  salon_naam: /^(salon|salon ?naam|bedrijf|bedrijfsnaam|kliniek|clinic|naam salon|naam bedrijf|naam van bedrijf|business|business ?name|name of business|company|company ?name|naam|name|title)$/,
   contactpersoon: /^(contact|contactpersoon|eigenaar|eigenaresse|owner|owner ?title|voornaam|naam contact)$/,
-  telefoon: /^(telefoon|telefoonnummer|telefoon ?nummer|tel|nummer|mobiel|mobiel ?nummer|phone|phone ?1|phoneunformatted|gsm)$/,
-  email: /^(e[ -]?mail|mail|e[ -]?mailadres|email ?adres|email ?1|emails?)$/,
+  telefoon: /^(telefoon|telefoonnummer|telefoon ?nummer|tel|nummer|mobiel|mobiel ?nummer|phone|phone ?1|phone ?number|phoneunformatted|contact ?number|contactnummer|gsm)$/,
+  email: /^(e[ -]?mail|mail|e[ -]?mailadres|email ?adres|email ?address|e[ -]?mail ?address|email ?1|emails?)$/,
   website: /^(website|site|url ?website|web|domain)$/,
   adres: /^(adres|address|full ?address|fulladdress|straat|street)$/,
   postcode: /^(postcode|postal ?code|postalcode|zip)$/,
@@ -159,13 +165,15 @@ export function parseLeadRows(rows: string[][], tab = ""): { leads: ImportLead[]
     }
   }
   if (header < 0) return { leads: [], reden: "geen kopregel met bedrijfsnaam en telefoon/e-mail/stad/website" };
-  const tabBehandeling = !tab || GENERIEKE_TAB.test(tab.trim()) ? [] : splitBehandelingen(tab);
+  const tabIsPlaats = !!tab && !!provincieVoor(tab);
+  const tabPlaats = tabIsPlaats ? tab.trim().charAt(0).toUpperCase() + tab.trim().slice(1) : null;
+  const tabBehandeling = !tab || tabIsPlaats || GENERIEKE_TAB.test(tab.trim()) ? [] : splitBehandelingen(tab);
   const get = (r: string[], k: Veld) => (cols[k] === undefined ? "" : (r[cols[k]!] ?? "").trim());
   const leads: ImportLead[] = [];
   for (const r of rows.slice(header + 1)) {
     const salon = get(r, "salon_naam");
     if (!salon) continue;
-    const stad = get(r, "stad") || null;
+    const stad = get(r, "stad") || tabPlaats;
     const beh = splitBehandelingen(get(r, "behandelingen"));
     const site = get(r, "website") || null;
     const email = get(r, "email").split(/[,;\s]+/).map(normEmail).find(Boolean) ?? null;
