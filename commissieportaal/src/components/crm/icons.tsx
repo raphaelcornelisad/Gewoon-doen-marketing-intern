@@ -41,3 +41,7 @@ export function waLink(tel: string | null): string | null {
   const d = tel?.replace(/[^\d+]/g, "").replace(/^\+/, "").replace(/^00/, "").replace(/^0(?=\d{9}$)/, "31");
   return d && d.length >= 10 ? `https://wa.me/${d}` : null;
 }
+
+const KLEUREN = ["#25a18e", "#6a7fdb", "#e07a5f", "#8d6cab", "#3d9970", "#d4a017", "#c75b7a", "#4a90a4"];
+/** Vaste kleur per lead voor de chat-avatar. */
+export const avatarKleur = (id: string) => KLEUREN[[...id].reduce((s, c) => s + c.charCodeAt(0), 0) % KLEUREN.length];

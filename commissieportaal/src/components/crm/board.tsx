@@ -234,7 +234,7 @@ export function Board({
                     </Link>
                     <div className="crm-card__actions">
                       {tel ? <a className="crm-iconbtn" href={`tel:${tel}`} aria-label="Bellen"><Icon name="phone" /></a> : <span className="crm-iconbtn is-off"><Icon name="phone" /></span>}
-                      {wa ? <a className="crm-iconbtn" href={wa} target="_blank" rel="noreferrer" aria-label="WhatsApp"><Icon name="chat" /></a> : <span className="crm-iconbtn is-off"><Icon name="chat" /></span>}
+                      {wa ? <Link className="crm-iconbtn" href={`/crm/inbox?lead=${c.contactId}`} aria-label="Chat openen"><Icon name="chat" /></Link> : <span className="crm-iconbtn is-off"><Icon name="chat" /></span>}
                       <button type="button" className="crm-iconbtn" aria-label={`Tags (${c.tags.length})`} disabled={!c.bewerkbaar} onClick={() => setPaneel({ soort: "tags", card: c })}>
                         <Icon name="tag" />
                         {c.tags.length > 0 && <span className="crm-badge">{c.tags.length}</span>}
