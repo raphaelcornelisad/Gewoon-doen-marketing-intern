@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon, initialen, waLink } from "./icons";
 import { FaseVenster } from "./acties";
+import { BelKnop } from "./bel-knop";
 import { post, QuickNote, Sheet, TagEditor } from "./sheet";
 
 export interface BoardCard {
@@ -233,7 +234,7 @@ export function Board({
                       )}
                     </Link>
                     <div className="crm-card__actions">
-                      {tel ? <a className="crm-iconbtn" href={`tel:${tel}`} aria-label="Bellen"><Icon name="phone" /></a> : <span className="crm-iconbtn is-off"><Icon name="phone" /></span>}
+                      {tel ? <BelKnop className="crm-iconbtn" telefoon={tel} salon={c.salon}><Icon name="phone" /></BelKnop> : <span className="crm-iconbtn is-off"><Icon name="phone" /></span>}
                       {wa ? <Link className="crm-iconbtn" href={`/crm/inbox?lead=${c.contactId}`} aria-label="Chat openen"><Icon name="chat" /></Link> : <span className="crm-iconbtn is-off"><Icon name="chat" /></span>}
                       <button type="button" className="crm-iconbtn" aria-label={`Tags (${c.tags.length})`} disabled={!c.bewerkbaar} onClick={() => setPaneel({ soort: "tags", card: c })}>
                         <Icon name="tag" />

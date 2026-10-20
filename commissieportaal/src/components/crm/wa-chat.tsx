@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { KanaalBeslissing } from "@/lib/crm/kanaal";
 import { avatarKleur, initialen, waLink } from "./icons";
+import { ToestemmingForm } from "./acties";
 import { post } from "./sheet";
 
 export interface WaGesprek {
@@ -92,6 +93,8 @@ export function WaInvoer({ contactId, uit }: { contactId: string; uit: boolean }
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [fout, setFout] = useState<string | null>(null);
   const [bezig, setBezig] = useState(false);
+  const [toestemming, setToestemming] = useState(false);
+  const [versie, setVersie] = useState(0);
   const veld = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -108,7 +111,7 @@ export function WaInvoer({ contactId, uit }: { contactId: string; uit: boolean }
     return () => {
       weg = true;
     };
-  }, [contactId, kanaal, templateId]);
+  }, [contactId, kanaal, templateId, versie]);
 
   useEffect(() => {
     const el = veld.current;
@@ -150,6 +153,14 @@ export function WaInvoer({ contactId, uit }: { contactId: string; uit: boolean }
       {(fout || (!viaApi && !viaApp) || template || viaApp) && (
         <div className="wa-melding">
           {fout ?? (!viaApi && !viaApp ? (b.api.reden ?? b.handmatig.reden) : template ? "Buiten het 24-uursvenster mag alleen een goedgekeurde template. Kies er een en verstuur." : "WhatsApp via het CRM is nog niet aangesloten: Versturen opent je eigen WhatsApp met deze tekst en legt het bericht hier vast.")}
+          {!fout && !viaApi && !viaApp && /toestemming/i.test(b.api.reden ?? "") && !toestemming && (
+            <> <button type="button" className="linkbutton" onClick={() => setToestemming(true)}>Toestemming vastleggen</button></>
+          )}
+        </div>
+      )}
+      {toestemming && (
+        <div className="wa-toestemming">
+          <ToestemmingForm contactId={contactId} kanaal={kanaal} onKlaar={() => { setToestemming(false); setVersie((v) => v + 1); router.refresh(); }} />
         </div>
       )}
       {template && c.templates.length > 1 && (

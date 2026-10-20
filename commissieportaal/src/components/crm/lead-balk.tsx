@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { BelKnop } from "./bel-knop";
 import { BerichtVenster, FaseVenster, InplanVenster, TaakVenster } from "./acties";
 import { Icon, type IconName } from "./icons";
 import { post, QuickNote, Sheet } from "./sheet";
@@ -43,7 +44,7 @@ export function LeadBalk(p: {
           (p.rol === "setter" && p.magOutbound ? (
             <Link href={`/crm/bellen?lead=${p.contactId}`} className="crm-actie crm-actie--groen"><Icon name="phone" size={20} /><span>Bellen</span></Link>
           ) : (
-            <a href={`tel:${tel}`} className="crm-actie crm-actie--groen"><Icon name="phone" size={20} /><span>Bellen</span></a>
+            <BelKnop telefoon={tel} className="crm-actie crm-actie--groen"><Icon name="phone" size={20} /><span>Bellen</span></BelKnop>
           ))}
         {!geblokkeerd && tel && knop("chat", "WhatsApp", () => setOpen("whatsapp"))}
         {!geblokkeerd && tel && knop("sms", "Sms", () => setOpen("sms"))}
