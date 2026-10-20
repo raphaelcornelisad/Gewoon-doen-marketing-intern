@@ -9,6 +9,8 @@ const body = Figtree({ subsets: ["latin"], variable: "--font-body", weight: ["40
 export const metadata: Metadata = {
   title: `Gewoon Sales Doen`,
   robots: { index: false, follow: false },
+  appleWebApp: { capable: true, title: "Sales Doen", statusBarStyle: "black" },
+  icons: { icon: "/icon-192.png", apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = {
