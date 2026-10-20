@@ -419,3 +419,16 @@ body:has(.crm) .site-header__inner { max-width: 1440px; }
 .crm-card--ghost { position: fixed; z-index: 60; pointer-events: none; transform: rotate(2deg); box-shadow: 0 14px 34px rgba(0,0,0,.22); border-color: var(--primair); padding-bottom: 10px; }
 body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: none !important; }
 .crm-col--over { outline: 3px dashed var(--primair); outline-offset: -3px; background: #FBEDED; }
+
+/* Notitie-preview bij hover op het notitie-icoon van een kaart */
+.crm-notitie-preview { position: fixed; z-index: 60; width: 300px; transform: translateY(calc(-100% - 8px)); background: var(--wit); border: 1px solid var(--rand); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,.16); padding: 10px 12px; pointer-events: none; display: grid; gap: 4px; }
+.crm-notitie-preview p { margin: 0; font-size: 14px; line-height: 1.4; white-space: pre-wrap; max-height: 180px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; }
+
+/* CRM-wisselaar (Laser ontharen, Huidverbetering, …) */
+.crm-top__links { display: flex; align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+.crm-wissel summary { background: var(--zwart); color: var(--wit); border-color: var(--zwart); }
+.crm-wissel summary::after { color: var(--wit); }
+.crm-menu__lijst--links { left: 0; right: auto; }
+.crm-menu__lijst .linkbutton.is-actief { color: var(--primair); }
+.crm-wissel__form { display: grid; gap: 6px; padding: 6px; }
+.crm-wissel__form input { width: 100%; }

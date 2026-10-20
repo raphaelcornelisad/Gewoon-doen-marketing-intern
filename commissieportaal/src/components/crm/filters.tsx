@@ -64,10 +64,6 @@ export function Filters({
             {opties.types.map((b) => <option key={b}>{b}</option>)}
           </select>
         )}
-        <select name="behandeling" defaultValue={f.behandeling ?? ""} aria-label="Behandeling">
-          <option value="">Alle behandelingen</option>
-          {opties.behandelingen.map((b) => <option key={b}>{b}</option>)}
-        </select>
         <select name="provincie" defaultValue={f.provincie ?? ""} aria-label="Regio">
           <option value="">Alle provincies</option>
           {opties.provincies.map((b) => <option key={b}>{b}</option>)}

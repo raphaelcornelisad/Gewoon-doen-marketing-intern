@@ -3,6 +3,7 @@ import { db } from "../supabase/server";
 import { crmSettings } from "./calendly";
 import { UITKOMSTEN, type Uitkomst } from "./core";
 import { twilioStatus } from "./twilio";
+import { huidigeCrmId } from "./werkruimte";
 import { actor, check, CrmError, getContact, log, OPP_COLS, wijsToe, zetFase, type CrmUser, type Opp } from "./server";
 
 function alleenSetter(user: CrmUser) {
@@ -15,7 +16,7 @@ export async function volgendeLead(user: CrmUser, overslaan: string[] = []): Pro
   const s = alleenSetter(user);
   const { reservering_min } = await crmSettings();
   const ids = overslaan.filter((x) => /^[0-9a-f-]{36}$/i.test(x)).slice(0, 200);
-  const r = await db().rpc("crm_reserveer_volgende", { p_setter: s.id, p_minuten: reservering_min, p_overslaan: ids });
+  const r = await db().rpc("crm_reserveer_volgende", { p_setter: s.id, p_minuten: reservering_min, p_overslaan: ids, p_crm: await huidigeCrmId() });
   if (r.error) throw new Error(r.error.message);
   return (r.data as string | null) ?? null;
 }

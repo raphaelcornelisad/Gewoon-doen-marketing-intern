@@ -21,6 +21,8 @@ export interface BoardCard {
   wie: { id: string; naam: string } | null;
   afspraak: string | null;
   belpogingen: number;
+  notities: number;
+  laatsteNotitie: { tekst: string; door: string | null; created_at: string } | null;
   /** Fase mag niet worden aangepast door deze gebruiker */
   vergrendeld: boolean;
   /** Gegevens (tags/notitie) mogen worden aangepast */
@@ -53,6 +55,19 @@ export function Board({
   const [over, setOver] = useState<string | null>(null);
   const [fout, setFout] = useState<string | null>(null);
   const [paneel, setPaneel] = useState<Paneel>(null);
+  const [preview, setPreview] = useState<{ card: BoardCard; x: number; y: number } | null>(null);
+  useEffect(() => {
+    if (!preview) return;
+    const weg = () => setPreview(null);
+    window.addEventListener("scroll", weg, true);
+    return () => window.removeEventListener("scroll", weg, true);
+  }, [preview]);
+  const toonPreview = (c: BoardCard, el: HTMLElement) => {
+    if (!c.laatsteNotitie || sleep.current?.actief) return;
+    const r = el.getBoundingClientRect();
+    const breedte = 300;
+    setPreview({ card: c, x: Math.max(8, Math.min(r.left + r.width / 2 - breedte / 2, window.innerWidth - breedte - 8)), y: r.top });
+  };
   useEffect(() => setCards(initial), [initial]);
 
   // ---- Slepen met de muis: linkerknop ingedrukt houden op een kaart en naar een andere fase trekken ----
@@ -211,10 +226,9 @@ export function Board({
                       {c.sub && <span className="small muted">{c.sub}</span>}
                       {c.afspraak && <span className="small crm-card__actie">{c.afspraak}</span>}
                       {c.belpogingen > 0 && <span className="small muted">{c.belpogingen}× gebeld</span>}
-                      {(c.behandelingen.length > 0 || c.tags.length > 0) && (
+                      {c.tags.length > 0 && (
                         <span className="crm-chips">
                           {c.tags.map((t) => <span key={`t-${t}`} className="crm-chip crm-chip--tag">{t}</span>)}
-                          {c.behandelingen.map((b) => <span key={b} className="crm-chip">{b}</span>)}
                         </span>
                       )}
                     </Link>
@@ -225,7 +239,19 @@ export function Board({
                         <Icon name="tag" />
                         {c.tags.length > 0 && <span className="crm-badge">{c.tags.length}</span>}
                       </button>
-                      <button type="button" className="crm-iconbtn" aria-label="Notitie" onClick={() => setPaneel({ soort: "notitie", card: c })}><Icon name="note" /></button>
+                      <button
+                        type="button"
+                        className="crm-iconbtn"
+                        aria-label={`Notities (${c.notities})`}
+                        onClick={() => { setPreview(null); setPaneel({ soort: "notitie", card: c }); }}
+                        onPointerEnter={(e) => e.pointerType === "mouse" && toonPreview(c, e.currentTarget)}
+                        onPointerLeave={() => setPreview(null)}
+                        onFocus={(e) => toonPreview(c, e.currentTarget)}
+                        onBlur={() => setPreview(null)}
+                      >
+                        <Icon name="note" />
+                        {c.notities > 0 && <span className="crm-badge">{c.notities}</span>}
+                      </button>
                       <button type="button" className="crm-iconbtn crm-iconbtn--primair" aria-label="Fase wijzigen" disabled={c.vergrendeld} onClick={() => setPaneel({ soort: "fase", card: c })}>
                         <Icon name="move" />
                       </button>
@@ -247,6 +273,16 @@ export function Board({
             {ghost.card.waarde && <span className="crm-card__value">{ghost.card.waarde}</span>}
           </div>
           <div className="crm-card__body">{ghost.card.sub && <span className="small muted">{ghost.card.sub}</span>}</div>
+        </div>
+      )}
+      {preview?.card.laatsteNotitie && (
+        <div className="crm-notitie-preview" role="tooltip" style={{ left: preview.x, top: preview.y }}>
+          <span className="small muted">
+            Laatste notitie{preview.card.notities > 1 ? ` (van ${preview.card.notities})` : ""} ·{" "}
+            {new Date(preview.card.laatsteNotitie.created_at).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+            {preview.card.laatsteNotitie.door ? ` · ${preview.card.laatsteNotitie.door.split("@")[0]}` : ""}
+          </span>
+          <p>{preview.card.laatsteNotitie.tekst.replace(/^\[Uit de lijst\]\s*/, "")}</p>
         </div>
       )}
       {paneel?.soort === "fase" && <FaseVenster oppId={paneel.card.id} fase={paneel.card.fase} fases={fases} pijplijn={pijplijn} onSluit={sluit} />}

@@ -5,7 +5,8 @@ import { Filters } from "@/components/crm/filters";
 import { acqSetters } from "@/lib/acquisitie/server";
 import { formatEuro } from "@/lib/commission";
 import { FASES, faseLabel, type Pijplijn } from "@/lib/crm/core";
-import { filterCards, filterOptions, loadCards, requireCrmUser, views, type BoardFilter, type Card } from "@/lib/crm/server";
+import { all, filterCards, filterOptions, loadCards, requireCrmUser, views, type BoardFilter, type Card } from "@/lib/crm/server";
+import { huidigeWerkruimte } from "@/lib/crm/werkruimte";
 import { db } from "@/lib/supabase/server";
 import { afspraakTekst } from "./format";
 
@@ -43,6 +44,22 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
     for (let i = 0; i < ids.length; i += 300) {
       const { data } = await db().from("crm_appointments").select("contact_id, start_op, status, type").in("contact_id", ids.slice(i, i + 300)).neq("status", "verplaatst").order("start_op", { ascending: false });
       for (const a of (data ?? []) as { contact_id: string; start_op: string; status: string; type: string }[]) if (!afspraken.has(a.contact_id)) afspraken.set(a.contact_id, a);
+    }
+  }
+
+  // Notities per lead: aantal en de laatste (voor de preview op de kaart).
+  const notities = new Map<string, { aantal: number; laatste: { tekst: string; door: string | null; created_at: string } }>();
+  if (!gesprekken && cards.length) {
+    const ids = cards.map((c) => c.contact_id);
+    for (let i = 0; i < ids.length; i += 300) {
+      const rows = await all<{ contact_id: string; tekst: string; door: string | null; created_at: string }>((f, t) =>
+        db().from("crm_activities").select("contact_id, tekst, door, created_at").eq("type", "notitie").in("contact_id", ids.slice(i, i + 300)).order("created_at", { ascending: false }).order("id").range(f, t),
+      );
+      for (const n of rows) {
+        const g = notities.get(n.contact_id) ?? { aantal: 0, laatste: n };
+        g.aantal++;
+        notities.set(n.contact_id, g);
+      }
     }
   }
 
@@ -89,6 +106,8 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       wie: wie ? { id: wie, naam: naam.get(wie) ?? "?" } : null,
       afspraak: volgendeActie(c),
       belpogingen: k.belpogingen,
+      notities: notities.get(k.id)?.aantal ?? 0,
+      laatsteNotitie: notities.get(k.id)?.laatste ?? null,
       vergrendeld: pijplijn === "sales" ? !(user.rol === "admin" || (user.rol === "sales" && c.verkoper_id === user.setter.id)) : !(user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id))),
       bewerkbaar: user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id)),
     };
@@ -99,7 +118,8 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       return [x.key, sum ? formatEuro(sum) : ""];
     }),
   );
-  const titel = pijplijn === "outbound" ? (user.rol === "setter" ? "Leads" : "Koude acquisitie") : user.rol === "admin" ? "Call geboekt" : user.rol === "sales" ? "Mijn geboekte calls" : "Mijn geboekte calls";
+  const crm = await huidigeWerkruimte();
+  const titel = pijplijn === "outbound" ? crm.naam : `${user.rol === "admin" ? "Call geboekt" : "Mijn geboekte calls"} · ${crm.naam}`;
 
   return (
     <>

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { CrmUser } from "@/lib/crm/server";
+import { huidigeWerkruimte, werkruimtes } from "@/lib/crm/werkruimte";
+import { CrmWissel } from "./crm-wissel";
 import { VergrendelKnop } from "./vergrendel";
 
 type L = [string, string];
 
 /** Hoofdmenu kort en per rol; beheer (alleen admin) en commissie apart rechts. */
-export function CrmBar({ user, actief, open }: { user: CrmUser; actief: string; open?: { beoordelen?: number; inbox?: number } }) {
+export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: string; open?: { beoordelen?: number; inbox?: number } }) {
   const hoofd: L[] =
     user.rol === "admin"
       ? [["/crm", "Dashboard"], ["/crm/outbound", "Outbound"], ["/crm/sales", "Call geboekt"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"]]
@@ -27,9 +29,13 @@ export function CrmBar({ user, actief, open }: { user: CrmUser; actief: string; 
       {teller(href) ? <span className="crm-badge crm-badge--inline">{teller(href)}</span> : null}
     </Link>
   );
+  const [huidig, lijst] = await Promise.all([huidigeWerkruimte(), werkruimtes()]);
   return (
     <header className="crm-top">
-      <nav className="crm-top__hoofd" aria-label="Hoofdmenu">{hoofd.map(link)}</nav>
+      <div className="crm-top__links">
+        <CrmWissel huidig={huidig} lijst={lijst} magMaken={user.rol === "admin"} />
+        <nav className="crm-top__hoofd" aria-label="Hoofdmenu">{hoofd.map(link)}</nav>
+      </div>
       <div className="crm-top__rechts">
         {user.rol === "setter" && (
           <Link href="/crm/commissie" className={`crm-top__commissie${actief === "/crm/commissie" ? " is-actief" : ""}`}>Mijn commissie</Link>

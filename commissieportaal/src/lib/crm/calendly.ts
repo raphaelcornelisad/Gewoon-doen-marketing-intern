@@ -205,10 +205,10 @@ async function typeVan(eventNaam: string): Promise<Gesprekstype | null> {
 
 async function zoekContact(email: string | null, tel: string | null): Promise<Contact | null> {
   if (email) {
-    const c = check(await db().from("crm_contacts").select(CONTACT_COLS).eq("email", email).maybeSingle()) as Contact | null;
+    const c = check(await db().from("crm_contacts").select(CONTACT_COLS).eq("email", email).order("created_at", { ascending: false }).limit(1).maybeSingle()) as Contact | null;
     if (c) return c;
   }
-  if (tel) return check(await db().from("crm_contacts").select(CONTACT_COLS).eq("telefoon_norm", tel).maybeSingle()) as Contact | null;
+  if (tel) return check(await db().from("crm_contacts").select(CONTACT_COLS).eq("telefoon_norm", tel).order("created_at", { ascending: false }).limit(1).maybeSingle()) as Contact | null;
   return null;
 }
 

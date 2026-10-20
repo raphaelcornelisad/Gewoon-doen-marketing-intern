@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "../supabase/server";
 import { all, type CrmUser } from "./server";
+import { huidigeCrmId } from "./werkruimte";
 
 export interface AgendaItem {
   id: string;
@@ -15,10 +16,12 @@ export interface AgendaItem {
 
 /** Alleen afspraken die aan CRM-leads gekoppeld zijn (geen privéafspraken). Rechten per rol, server-side. */
 export async function agenda(user: CrmUser, van: string, tot: string): Promise<AgendaItem[]> {
+  const crm = await huidigeCrmId();
   const rows = await all<Omit<AgendaItem, "sales">>((f, t) =>
     db()
       .from("crm_appointments")
       .select("id, type, status, start_op, setter_id, attributie, contact:crm_contacts!inner(id, salon_naam, contactpersoon, eigenaar_id)")
+      .eq("contact.crm_id", crm)
       .gte("start_op", van)
       .lt("start_op", tot)
       .order("start_op")

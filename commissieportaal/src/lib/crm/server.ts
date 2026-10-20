@@ -27,6 +27,7 @@ import {
 } from "./core";
 import { herbereken } from "./grootboek";
 import { provincieVoor } from "./provincies";
+import { huidigeCrmId } from "./werkruimte";
 
 export function check<T>(r: { data: T; error: { message: string } | null }): T {
   if (r.error) throw new Error(r.error.message);
@@ -213,8 +214,9 @@ export interface BoardFilter {
 }
 
 export async function loadCards(pijplijn: Pijplijn, user: CrmUser): Promise<Card[]> {
+  const crm = await huidigeCrmId();
   const cards = await all<Card>((from, to) => {
-    let q = db().from("crm_opportunities").select(`${OPP_COLS}, contact:crm_contacts!inner(${CONTACT_COLS})`).eq("pijplijn", pijplijn);
+    let q = db().from("crm_opportunities").select(`${OPP_COLS}, contact:crm_contacts!inner(${CONTACT_COLS})`).eq("pijplijn", pijplijn).eq("contact.crm_id", crm);
     if (pijplijn === "sales" && user.rol === "setter") q = q.eq("setter_id", user.setter.id);
     if (pijplijn === "sales" && user.rol === "sales") q = q.eq("verkoper_id", user.setter.id);
     return q.order("fase_sinds", { ascending: false }).order("id").range(from, to);
@@ -271,7 +273,8 @@ export function filterOptions(cards: Card[]) {
 
 /** Alle gebruikte tags (voor suggesties). */
 export async function allTags(): Promise<string[]> {
-  const rows = await all<{ tags: string[] }>((f, t) => db().from("crm_contacts").select("tags").neq("tags", "{}").order("id").range(f, t));
+  const crm = await huidigeCrmId();
+  const rows = await all<{ tags: string[] }>((f, t) => db().from("crm_contacts").select("tags").eq("crm_id", crm).neq("tags", "{}").order("id").range(f, t));
   return [...new Set(rows.flatMap((r) => r.tags))].sort((a, b) => a.localeCompare(b, "nl"));
 }
 
@@ -619,7 +622,7 @@ export async function createContact(user: CrmUser, input: ContactInput) {
     c = check(
       await db()
         .from("crm_contacts")
-        .insert({ ...data, bron: "handmatig", eigenaar_id: user.setter?.id ?? null, oorspronkelijke_setter_id: user.setter?.id ?? null })
+        .insert({ ...data, crm_id: await huidigeCrmId(), bron: "handmatig", eigenaar_id: user.setter?.id ?? null, oorspronkelijke_setter_id: user.setter?.id ?? null })
         .select("id")
         .single(),
     ) as { id: string };
@@ -681,9 +684,10 @@ export async function importLeads(user: CrmUser, bron: { url?: string; csv?: str
     bronNaam = "sheet";
   }
   const { uniek, dubbel } = dedupeLeads(leads);
+  const crm = await huidigeCrmId();
 
   const bestaande = await all<{ id: string; salon_naam: string; stad: string | null; telefoon_norm: string | null; email: string | null; domein: string | null }>((f, t) =>
-    db().from("crm_contacts").select("id, salon_naam, stad, telefoon_norm, email, domein").order("id").range(f, t),
+    db().from("crm_contacts").select("id, salon_naam, stad, telefoon_norm, email, domein").eq("crm_id", crm).order("id").range(f, t),
   );
   const tel = new Set(bestaande.map((b) => b.telefoon_norm).filter(Boolean));
   const mail = new Set(bestaande.map((b) => b.email).filter(Boolean));
@@ -729,6 +733,7 @@ export async function importLeads(user: CrmUser, bron: { url?: string; csv?: str
         .insert(
           blok.map(({ status: _s, notitie: _n, rood, ...l }, i) => ({
             ...l,
+            crm_id: crm,
             bron: bronNaam,
             belpogingen: fases[i] === "nieuw" ? 0 : 1,
             niet_benaderen: fases[i] === "niet_benaderen" || !!rood,
@@ -828,17 +833,18 @@ export interface SetterStats {
 export async function stats(start: string, eind: string, user: CrmUser) {
   const van = amsterdamMidnight(start);
   const tot = amsterdamMidnight(eind);
+  const crm = await huidigeCrmId();
   const [setters, contacts, calls, appts, deals, taken] = await Promise.all([
     acqSetters(),
-    all<{ eigenaar_id: string | null }>((f, t) => db().from("crm_contacts").select("eigenaar_id").not("eigenaar_id", "is", null).order("id").range(f, t)),
-    all<{ setter_id: string | null; uitkomst: string | null }>((f, t) => db().from("crm_calls").select("setter_id, uitkomst").gte("gestart_op", van).lt("gestart_op", tot).order("id").range(f, t)),
+    all<{ eigenaar_id: string | null }>((f, t) => db().from("crm_contacts").select("eigenaar_id").eq("crm_id", crm).not("eigenaar_id", "is", null).order("id").range(f, t)),
+    all<{ setter_id: string | null; uitkomst: string | null }>((f, t) => db().from("crm_calls").select("setter_id, uitkomst, contact:crm_contacts!inner(crm_id)").eq("contact.crm_id", crm).gte("gestart_op", van).lt("gestart_op", tot).order("id").range(f, t)),
     all<{ setter_id: string | null; status: string; type: string; start_op: string; created_at: string }>((f, t) =>
-      db().from("crm_appointments").select("setter_id, status, type, start_op, created_at").gte("start_op", van).lt("start_op", tot).order("id").range(f, t),
+      db().from("crm_appointments").select("setter_id, status, type, start_op, created_at, contact:crm_contacts!inner(crm_id)").eq("contact.crm_id", crm).gte("start_op", van).lt("start_op", tot).order("id").range(f, t),
     ),
     all<{ setter_id: string | null; waarde_cents: number | null; sluitdatum: string }>((f, t) =>
-      db().from("crm_opportunities").select("setter_id, waarde_cents, sluitdatum").eq("pijplijn", "sales").eq("fase", "geaccepteerd").gte("sluitdatum", start).lt("sluitdatum", eind).order("id").range(f, t),
+      db().from("crm_opportunities").select("setter_id, waarde_cents, sluitdatum, contact:crm_contacts!inner(crm_id)").eq("contact.crm_id", crm).eq("pijplijn", "sales").eq("fase", "geaccepteerd").gte("sluitdatum", start).lt("sluitdatum", eind).order("id").range(f, t),
     ),
-    all<{ toegewezen_aan: string | null }>((f, t) => db().from("crm_tasks").select("toegewezen_aan").is("gedaan_op", null).order("id").range(f, t)),
+    all<{ toegewezen_aan: string | null }>((f, t) => db().from("crm_tasks").select("toegewezen_aan, contact:crm_contacts!inner(crm_id)").eq("contact.crm_id", crm).is("gedaan_op", null).order("id").range(f, t)),
   ]);
   const NIET_BEREIKT = new Set(["niet_opgenomen", "ongeldig_nummer"]);
   const rijen: SetterStats[] = setters

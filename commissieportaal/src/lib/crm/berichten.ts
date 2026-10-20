@@ -5,6 +5,7 @@ import { normPhone, vulTemplate } from "./core";
 import { beoordeelKanaal, isAfmelding, type KanaalBeslissing } from "./kanaal";
 import { actor, check, CrmError, getContact, log, magOutbound, OPP_COLS, zetFase, type Contact, type CrmUser, type Opp } from "./server";
 import { TwilioFout, twilioStatus, verstuurBericht } from "./twilio";
+import { huidigeCrmId } from "./werkruimte";
 
 export interface Template {
   id: string;
@@ -113,7 +114,7 @@ export async function berichtStatus(sid: string, twilioStatusNaam: string, foutC
 /** Inkomend bericht: koppelen aan lead, opvolging stoppen, afmelding verwerken, taak voor reactie. */
 export async function inkomend(o: { sid: string; van: string; tekst: string; kanaal: "whatsapp" | "sms" }) {
   const tel = normPhone(o.van.replace(/^whatsapp:/, ""));
-  const c = tel ? (check(await db().from("crm_contacts").select("id, eigenaar_id, salon_naam").eq("telefoon_norm", tel).maybeSingle()) as { id: string; eigenaar_id: string | null; salon_naam: string } | null) : null;
+  const c = tel ? (check(await db().from("crm_contacts").select("id, eigenaar_id, salon_naam").eq("telefoon_norm", tel).order("created_at", { ascending: false }).limit(1).maybeSingle()) as { id: string; eigenaar_id: string | null; salon_naam: string } | null) : null;
   if (!c) {
     console.warn("Inkomend bericht van onbekend nummer", tel);
     return;
@@ -143,6 +144,7 @@ export async function inbox(user: CrmUser) {
     await db()
       .from("crm_messages")
       .select("id, contact_id, kanaal, richting, tekst, status, created_at, gelezen_door_team, contact:crm_contacts!inner(id, salon_naam, eigenaar_id)")
+      .eq("contact.crm_id", await huidigeCrmId())
       .order("created_at", { ascending: false })
       .limit(1000),
   ) ?? []) as unknown as { id: string; contact_id: string; kanaal: string; richting: string; tekst: string; status: string; created_at: string; gelezen_door_team: boolean; contact: { id: string; salon_naam: string; eigenaar_id: string | null } }[];
