@@ -94,3 +94,67 @@ describe("import zoals de Dutch-leadlijst", () => {
     expect(r.leads[0]).toMatchObject({ salon_naam: "THE LAZER BAR", email: "info@thelaserbar.nl", stad: "Rotterdam", provincie: "Zuid-Holland", behandelingen: [] });
   });
 });
+
+import { faseUitStatus, schoonTab } from "@/lib/crm/core";
+
+describe("eerder bewerkte leadlijst (status/notitie)", () => {
+  it("houten: mail en contact omgedraaid; status zonder kopje voor notitie", () => {
+    const r = parseLeadRows(
+      [
+        ["business name ", "mail", "contact ", "Status"],
+        ["Huidzorg Houten", "contact@huidzorghouten.nl", "030 63 42 561"],
+        ["Saff. Clinics", "info@safflaserclinic.nl", "06 13231118", "Terugbelverzoek", "8-10 om 10:00 uur"],
+      ],
+      "houten",
+    );
+    expect(r.leads[0]).toMatchObject({ telefoon_norm: "+31306342561", email: "contact@huidzorghouten.nl", stad: "Houten" });
+    expect(r.leads[1]).toMatchObject({ telefoon_norm: "+31613231118", status: "Terugbelverzoek", notitie: "8-10 om 10:00 uur" });
+  });
+
+  it("almere: lege kolom D, status in E; placeholders weg; emmen: naam eigenaar", () => {
+    const a = parseLeadRows(
+      [
+        ["business name", "contact ", "Mail ", "", "Status"],
+        ["no1 laser clinic", "06 847 545 60", "almere@no1laserclinic.nl", "", "Geen gehoor - Wafu"],
+        ["Mindful Beauty House", "06 16 66 12 01", "info@mysite.com", "", "Ingepland "],
+        ["City Beauty & Laser", "123-456-7890", "contact@mysite.com"],
+        ["Asmterdam Skin Care", "", "callto:0683599113"],
+      ],
+      "almere",
+    );
+    expect(a.leads.map((l) => [l.telefoon_norm, l.email, l.status])).toEqual([
+      ["+31684754560", "almere@no1laserclinic.nl", "Geen gehoor - Wafu"],
+      ["+31616661201", null, "Ingepland"],
+      [null, null, null],
+      ["+31683599113", null, null],
+    ]);
+    const e = parseLeadRows([["business name", "contact ", "mail", "Status", "Notitie", "Naam eigenaar"], ["Salon La Bella's", "627031450", "salonlabellas@gmail.com", "Opvolgen", "Voor nu geen ruimte", "Esther"]], "emmen");
+    expect(e.leads[0]).toMatchObject({ contactpersoon: "Esther", status: "Opvolgen", telefoon_norm: "+31627031450", provincie: "Drenthe" });
+  });
+
+  it("status → fase en tabnamen opschonen", () => {
+    expect(faseUitStatus("Geen gehoor - Wafu")).toBe("wafu");
+    expect(faseUitStatus("Geen interesse/geen match", "Nummer is niet in gebruik")).toBe("ongeldig_nummer");
+    expect(faseUitStatus("Geen interesse/geen match", "Eigen marketing")).toBe("niet_geinteresseerd");
+    expect(faseUitStatus("Terugbelverzoek")).toBe("terugbellen");
+    expect(faseUitStatus("Opvolgen")).toBe("terugbellen");
+    expect(faseUitStatus("Ingepland ")).toBe("ingepland");
+    expect(faseUitStatus("")).toBe("nieuw");
+    expect(schoonTab("Haarlem ⏳")).toBe("Haarlem");
+    expect(schoonTab("\nede")).toBe("ede");
+    expect(schoonTab("leystad")).toBe("Lelystad");
+    expect(normPhone("310613431212")).toBe("+31613431212");
+    expect(normPhone("3197010266402")).toBe("+3197010266402");
+    expect(normPhone("31 (0)30-214 59 09")).toBe("+31302145909");
+  });
+
+  it("keten met hetzelfde nummer wordt één lead; status van de dubbel wordt aangevuld", () => {
+    const base = { contactpersoon: null, telefoon: null, website: null, domein: null, adres: null, postcode: null, provincie: null, type_bedrijf: null, behandelingen: [], bron_url: null, extern_id: null };
+    const r = dedupeLeads([
+      { ...base, salon_naam: "Change Laserclinic", telefoon_norm: "+31202334531", email: "info@changelaserclinic.nl", stad: "Rotterdam", status: null, notitie: null },
+      { ...base, salon_naam: "Change Laserclinic Zuid", telefoon_norm: "+31202334531", email: "info@changelaserclinic.nl", stad: "Amsterdam", status: "Geen interesse/geen match", notitie: "Intern marketing team" },
+    ]);
+    expect(r.uniek).toHaveLength(1);
+    expect(r.uniek[0]).toMatchObject({ status: "Geen interesse/geen match", notitie: "Intern marketing team" });
+  });
+});

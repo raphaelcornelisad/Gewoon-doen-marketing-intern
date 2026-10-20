@@ -60,11 +60,13 @@ export function normPhone(v: string | null | undefined): string | null {
   const d = v
     .replace(/[^\d+]/g, "")
     .replace(/^00(?=[1-9])/, "+")
+    .replace(/^310(?=\d{9}$)/, "+31")
     .replace(/^31(?=\d{9}$)/, "+31")
+    .replace(/^31(?=97\d{9}$)/, "+31")
     .replace(/^32(?=\d{8,9}$)/, "+32")
     .replace(/^0(?=\d{9}$)/, "+31")
     .replace(/^(?=[1-9]\d{8}$)/, "+31"); // 9 cijfers zonder voorloopnul (Excel)
-  return /^\+\d{10,13}$/.test(d) ? d : null;
+  return /^\+\d{10,13}$/.test(d) && !/^\+310/.test(d) ? d : null;
 }
 
 /** Domein uit een website (zonder www.), voor ontdubbelen. */
@@ -118,16 +120,20 @@ export interface ImportLead {
   behandelingen: string[];
   bron_url: string | null;
   extern_id: string | null;
+  /** Belstatus uit een eerder bewerkte lijst (bv. "Geen gehoor - Wafu") */
+  status?: string | null;
+  /** Notitie uit de lijst */
+  notitie?: string | null;
 }
 
-type Veld = "salon_naam" | "contactpersoon" | "telefoon" | "email" | "website" | "adres" | "postcode" | "stad" | "provincie" | "type_bedrijf" | "behandelingen" | "bron_url" | "extern_id";
+type Veld = "salon_naam" | "contactpersoon" | "telefoon" | "email" | "website" | "adres" | "postcode" | "stad" | "provincie" | "type_bedrijf" | "behandelingen" | "bron_url" | "extern_id" | "status" | "notitie";
 
 // Kopjes na normalisatie (kleine letters, alleen a-z0-9, spatie en -). Dekt eigen sheets, Outscraper en Apify.
 const KOLOMMEN: Record<Veld, RegExp> = {
-  salon_naam: /^(salon|salon ?naam|bedrijf|bedrijfsnaam|kliniek|clinic|naam salon|naam bedrijf|naam van bedrijf|business|business ?name|name of business|company|company ?name|naam|name|title)$/,
-  contactpersoon: /^(contact|contactpersoon|eigenaar|eigenaresse|owner|owner ?title|voornaam|naam contact)$/,
-  telefoon: /^(telefoon|telefoonnummer|telefoon ?nummer|tel|nummer|mobiel|mobiel ?nummer|phone|phone ?1|phone ?number|phoneunformatted|contact ?number|contactnummer|gsm)$/,
-  email: /^(e[ -]?mail|mail|e[ -]?mailadres|email ?adres|email ?address|e[ -]?mail ?address|email ?1|emails?)$/,
+  salon_naam: /^(salon|salon ?naam|bedrijf|bedrijfsnaam|kliniek|clinic|naam salon|naam bedrijf|naam van bedrijf|business|business ?(name|mame)|name of business|company|company ?name|naam|name|title)$/,
+  contactpersoon: /^(contactpersoon|eigenaar|eigenaresse|naam eigenaar|naam eigenaresse|owner|owner ?name|owner ?title|voornaam|naam contact)$/,
+  telefoon: /^(telefoon|telefoonnummer|telefoon ?nummer|tel|nummer|mobiel|mobiel ?nummer|phone|phone ?1|phone ?number|phoneunformatted|contact|contact ?number|contactnummer|gsm)$/,
+  email: /^(e[ -]?mail|mail|mali|e[ -]?mailadres|email ?adres|email ?address|e[ -]?mail ?address|email ?1|emails?)$/,
   website: /^(website|site|url ?website|web|domain)$/,
   adres: /^(adres|address|full ?address|fulladdress|straat|street)$/,
   postcode: /^(postcode|postal ?code|postalcode|zip)$/,
@@ -137,7 +143,36 @@ const KOLOMMEN: Record<Veld, RegExp> = {
   behandelingen: /^(behandeling|behandelingen|type behandeling|dienst|diensten|niche|subtypes|categories|specialisaties)$/,
   bron_url: /^(bron|bron ?url|location ?link|locationlink|google ?maps ?url|url|maps ?url)$/,
   extern_id: /^(place ?id|placeid|google ?id|cid)$/,
+  status: /^(status|belstatus|uitkomst|resultaat)$/,
+  notitie: /^(notitie|notities|notes?|opmerking|opmerkingen)$/,
 };
+
+/** Placeholderwaarden uit websitebouwers (geen echte gegevens). */
+const NEP = /(mysite\.com|yoursite\.|example\.|sitejet\.io|^123-?456-?7890$)/i;
+const lijktTel = (v: string) => !v.includes("@") && (v.replace(/\D/g, "").length >= 8);
+const lijktMail = (v: string) => /@/.test(v);
+
+/** Belstatus uit een lijst → outbound-fase. Notitie "nummer niet in gebruik" → ongeldig nummer. */
+export function faseUitStatus(status: string | null | undefined, notitie?: string | null): string {
+  const s = (status ?? "").toLowerCase();
+  const n = (notitie ?? "").toLowerCase();
+  if (!s.trim()) return "nieuw";
+  if (/ingepland/.test(s)) return "ingepland";
+  if (/geen interesse|geen match|niet geinteresseerd|niet geïnteresseerd/.test(s)) {
+    return /niet in gebruik|niet beschikbaar|bestaat niet|ongeldig/.test(n) ? "ongeldig_nummer" : "niet_geinteresseerd";
+  }
+  if (/wafu|wavo|geen gehoor|niet opgenomen/.test(s)) return "wafu";
+  if (/terugbel|opvolg|bel terug|later/.test(s)) return "terugbellen";
+  if (/niet meer benaderen|afgemeld/.test(s)) return "niet_benaderen";
+  return "nieuw";
+}
+
+/** Tabbladnaam opschonen: emoji's, enters en bekende tikfouten. */
+export function schoonTab(tab: string): string {
+  const t = tab.replace(/[^\p{L}\p{N}' -]/gu, " ").replace(/\s+/g, " ").trim();
+  const alias: Record<string, string> = { leystad: "Lelystad", hertogenbosch: "'s-Hertogenbosch", "den bosch": "'s-Hertogenbosch" };
+  return alias[t.toLowerCase()] ?? t;
+}
 
 const GENERIEKE_TAB = /^(blad|sheet|tabblad)\s*\d*$|^(leads?|leadlijst|data|import|export|csv)$/i;
 
@@ -165,8 +200,21 @@ export function parseLeadRows(rows: string[][], tab = ""): { leads: ImportLead[]
     }
   }
   if (header < 0) return { leads: [], reden: "geen kopregel met bedrijfsnaam en telefoon/e-mail/stad/website" };
-  const tabIsPlaats = !!tab && !!provincieVoor(tab);
-  const tabPlaats = tabIsPlaats ? tab.trim().charAt(0).toUpperCase() + tab.trim().slice(1) : null;
+  // Kolommen op inhoud controleren: staat er in "telefoon" vooral e-mail (of andersom), dan omdraaien.
+  const data = rows.slice(header + 1).filter((r) => r.some((c) => c?.trim()));
+  const aandeel = (idx: number | undefined, f: (v: string) => boolean) => {
+    if (idx === undefined) return 0;
+    const vals = data.map((r) => (r[idx] ?? "").trim()).filter(Boolean);
+    return vals.length ? vals.filter(f).length / vals.length : 0;
+  };
+  if (cols.telefoon !== undefined && cols.email !== undefined && aandeel(cols.telefoon, lijktMail) > 0.5 && aandeel(cols.email, lijktTel) > 0.5) {
+    [cols.telefoon, cols.email] = [cols.email, cols.telefoon];
+  }
+  // Notitie zonder eigen kopje: de kolom direct na Status.
+  if (cols.status !== undefined && cols.notitie === undefined) cols.notitie = cols.status + 1;
+  const tabSchoon = schoonTab(tab);
+  const tabIsPlaats = !!tabSchoon && !!provincieVoor(tabSchoon);
+  const tabPlaats = tabIsPlaats ? tabSchoon.charAt(0).toUpperCase() + tabSchoon.slice(1) : null;
   const tabBehandeling = !tab || tabIsPlaats || GENERIEKE_TAB.test(tab.trim()) ? [] : splitBehandelingen(tab);
   const get = (r: string[], k: Veld) => (cols[k] === undefined ? "" : (r[cols[k]!] ?? "").trim());
   const leads: ImportLead[] = [];
@@ -176,12 +224,22 @@ export function parseLeadRows(rows: string[][], tab = ""): { leads: ImportLead[]
     const stad = get(r, "stad") || tabPlaats;
     const beh = splitBehandelingen(get(r, "behandelingen"));
     const site = get(r, "website") || null;
-    const email = get(r, "email").split(/[,;\s]+/).map(normEmail).find(Boolean) ?? null;
+    // Telefoon en e-mail per rij controleren: verkeerde kolom, placeholders, "callto:".
+    let telRuw = get(r, "telefoon");
+    let mailRuw = get(r, "email");
+    if (lijktMail(telRuw) && !lijktMail(mailRuw)) [telRuw, mailRuw] = [mailRuw, telRuw];
+    if (/^callto:/i.test(mailRuw)) {
+      if (!telRuw) telRuw = mailRuw.replace(/^callto:/i, "");
+      mailRuw = "";
+    }
+    if (NEP.test(telRuw)) telRuw = "";
+    if (NEP.test(mailRuw)) mailRuw = "";
+    const email = mailRuw.split(/[,;\s]+/).map(normEmail).find(Boolean) ?? null;
     leads.push({
-      salon_naam: salon,
+      salon_naam: salon.replace(/:$/, "").trim(),
       contactpersoon: get(r, "contactpersoon") || null,
-      telefoon: get(r, "telefoon") || null,
-      telefoon_norm: normPhone(get(r, "telefoon")),
+      telefoon: telRuw || null,
+      telefoon_norm: normPhone(telRuw),
       email,
       website: site,
       domein: domeinVan(site),
@@ -193,6 +251,8 @@ export function parseLeadRows(rows: string[][], tab = ""): { leads: ImportLead[]
       behandelingen: beh.length ? beh : tabBehandeling,
       bron_url: /^https?:/.test(get(r, "bron_url")) ? get(r, "bron_url") : null,
       extern_id: get(r, "extern_id") || null,
+      status: get(r, "status") || null,
+      notitie: get(r, "notitie") || null,
     });
   }
   return { leads, reden: null };
@@ -253,18 +313,26 @@ export function parseCsv(text: string): string[][] {
 
 export const naamSleutel = (l: { salon_naam: string; stad: string | null }) => `${key(l.salon_naam)}|${key(l.stad ?? "")}`;
 
-/** Ontdubbelt binnen de import op telefoon, e-mail, domein of salonnaam+stad. */
+/**
+ * Ontdubbelt binnen de import. Telefoon is leidend (vestigingen van een keten met eigen nummer blijven apart);
+ * zonder telefoon op e-mail, domein of naam+plaats. Bij een dubbel wordt een ontbrekende status/notitie aangevuld.
+ */
 export function dedupeLeads(leads: ImportLead[]): { uniek: ImportLead[]; dubbel: number } {
-  const seen = new Set<string>();
+  const seen = new Map<string, ImportLead>();
   const uniek: ImportLead[] = [];
   let dubbel = 0;
   for (const l of leads) {
-    const keys = [l.telefoon_norm && `t:${l.telefoon_norm}`, l.email && `e:${l.email}`, l.domein && `d:${l.domein}`, `n:${naamSleutel(l)}`].filter(Boolean) as string[];
-    if (keys.some((k) => seen.has(k))) {
+    const keys = (l.telefoon_norm ? [`t:${l.telefoon_norm}`] : [l.email && `e:${l.email}`, l.domein && `d:${l.domein}`, `n:${naamSleutel(l)}`]).filter(Boolean) as string[];
+    const eerder = keys.map((k) => seen.get(k)).find(Boolean);
+    if (eerder) {
       dubbel++;
+      if (!eerder.status && l.status) eerder.status = l.status;
+      if (l.notitie && l.notitie.trim() && !(eerder.notitie ?? "").includes(l.notitie.trim())) eerder.notitie = [eerder.notitie, l.notitie].filter((x) => x?.trim()).join("\n");
+      if (!eerder.email && l.email) eerder.email = l.email;
+      if (!eerder.contactpersoon && l.contactpersoon) eerder.contactpersoon = l.contactpersoon;
       continue;
     }
-    keys.forEach((k) => seen.add(k));
+    keys.forEach((k) => seen.set(k, l));
     uniek.push(l);
   }
   return { uniek, dubbel };

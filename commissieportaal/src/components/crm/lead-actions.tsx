@@ -111,7 +111,7 @@ export function NoteForm({ contactId }: { contactId: string }) {
 export function ImportForm() {
   const a = useAction();
   const [url, setUrl] = useState("");
-  const [res, setRes] = useState<null | { toegevoegd: number; bestaand: number; dubbel: number; twijfel: number; zonderTelefoon: number; zonderProvincie: number; overgeslagen: { tab: string; reden: string }[] }>(null);
+  const [res, setRes] = useState<null | { toegevoegd: number; bestaand: number; dubbel: number; twijfel: number; zonderTelefoon: number; zonderProvincie: number; perFase?: Record<string, number>; overgeslagen: { tab: string; reden: string }[] }>(null);
   async function stuur(body: Record<string, unknown>) {
     setRes(null);
     const r = await a.run("/api/crm/import", body, "Geïmporteerd.");
@@ -144,7 +144,15 @@ export function ImportForm() {
         <div className="notice notice--ok">
           <strong>{res.toegevoegd} nieuwe leads toegevoegd</strong>
           <span className="small">{res.bestaand} stonden er al in (zelfde telefoon of e-mail) · {res.dubbel} dubbel in het bestand · {res.twijfel} twijfelgevallen in Beoordelen · {res.zonderTelefoon} zonder telefoonnummer · {res.zonderProvincie} zonder provincie</span>
-          {res.overgeslagen.map((o) => <span key={o.tab} className="small">Tab “{o.tab}” overgeslagen: {o.reden}</span>)}
+          {res.perFase && (
+            <span className="small">
+              Per fase:{" "}
+              {Object.entries(res.perFase)
+                .map(([f, n]) => `${({ nieuw: "Nieuw", wafu: "WAFU", terugbellen: "Terugbellen", niet_geinteresseerd: "Niet geïnteresseerd", ongeldig_nummer: "Ongeldig nummer", ingepland: "Ingepland (ook in Sales)", niet_benaderen: "Niet meer benaderen" } as Record<string, string>)[f] ?? f} ${n}`)
+                .join(" · ")}
+            </span>
+          )}
+          {res.overgeslagen.filter((o) => !/^Sheet\d*$/i.test(o.tab.trim())).map((o) => <span key={o.tab} className="small">Tab “{o.tab}” overgeslagen: {o.reden}</span>)}
         </div>
       ) : (
         <Msg m={a.msg} />

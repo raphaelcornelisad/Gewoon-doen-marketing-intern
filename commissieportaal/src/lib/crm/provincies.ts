@@ -272,6 +272,7 @@ const MAP: Record<string, string> = {
   "'s-gravenhage": "Zuid-Holland",
   "s-gravenhage": "Zuid-Holland",
   "den haag": "Zuid-Holland",
+  "hertogenbosch": "Noord-Brabant",
   "rotterdam": "Zuid-Holland",
   "leiden": "Zuid-Holland",
   "dordrecht": "Zuid-Holland",

@@ -11,6 +11,7 @@ import {
   BELBAAR,
   dedupeLeads,
   domeinVan,
+  faseUitStatus,
   FASES,
   faseLabel,
   isFase,
@@ -680,10 +681,18 @@ export async function importLeads(user: CrmUser, bron: { url?: string; csv?: str
   const twijfel: { lead: ImportLead; ander: string; reden: string }[] = [];
   let bestaand = 0;
   for (const l of uniek) {
-    if ((l.telefoon_norm && tel.has(l.telefoon_norm)) || (l.email && mail.has(l.email))) {
+    // Telefoon is leidend; zonder telefoon telt een bekend e-mailadres als bestaand.
+    if ((l.telefoon_norm && tel.has(l.telefoon_norm)) || (!l.telefoon_norm && l.email && mail.has(l.email))) {
       bestaand++;
       continue;
     }
+    // Ander nummer maar e-mail al in gebruik (keten met gedeeld adres): e-mail niet dubbel opslaan.
+    if (l.email && mail.has(l.email)) {
+      l.notitie = [l.notitie, `E-mail ${l.email} wordt ook door een andere vestiging gebruikt.`].filter(Boolean).join("\n");
+      l.email = null;
+    }
+    if (l.email) mail.add(l.email);
+    if (l.telefoon_norm) tel.add(l.telefoon_norm);
     const zelfdeDomein = l.domein ? dom.get(l.domein) : undefined;
     const zelfdeNaam = naam.get(naamSleutel(l));
     if (zelfdeDomein || zelfdeNaam) twijfel.push({ lead: l, ander: (zelfdeDomein ?? zelfdeNaam)!, reden: zelfdeDomein ? `zelfde website (${l.domein})` : "zelfde naam en plaats, ander nummer" });
@@ -691,18 +700,40 @@ export async function importLeads(user: CrmUser, bron: { url?: string; csv?: str
   }
 
   let toegevoegd = 0;
+  const perFase: Record<string, number> = {};
   const idVoor = new Map<ImportLead, string>();
+  const nu = new Date().toISOString();
+  const herkomst = `Geïmporteerd (${bron.bestandsnaam ?? bronNaam})`;
   for (let k = 0; k < nieuw.length; k += 200) {
     const blok = nieuw.slice(k, k + 200);
+    const fases = blok.map((l) => faseUitStatus(l.status, l.notitie));
     const ins = (check(
       await db()
         .from("crm_contacts")
-        .insert(blok.map((l) => ({ ...l, bron: bronNaam })))
+        .insert(
+          blok.map(({ status: _s, notitie: _n, ...l }, i) => ({
+            ...l,
+            bron: bronNaam,
+            belpogingen: fases[i] === "nieuw" ? 0 : 1,
+            niet_benaderen: fases[i] === "niet_benaderen",
+          })),
+        )
         .select("id"),
     ) ?? []) as { id: string }[];
     ins.forEach((c, i) => idVoor.set(blok[i], c.id));
-    check(await db().from("crm_opportunities").insert(ins.map((c) => ({ contact_id: c.id, pijplijn: "outbound", fase: "nieuw" }))));
-    check(await db().from("crm_activities").insert(ins.map((c) => ({ contact_id: c.id, door: user.email, type: "import", tekst: `Geïmporteerd (${bron.bestandsnaam ?? bronNaam})` }))));
+    check(await db().from("crm_opportunities").insert(ins.map((c, i) => ({ contact_id: c.id, pijplijn: "outbound", fase: fases[i], fase_sinds: nu }))));
+    const ingepland = ins.filter((_, i) => fases[i] === "ingepland");
+    if (ingepland.length) check(await db().from("crm_opportunities").insert(ingepland.map((c) => ({ contact_id: c.id, pijplijn: "sales", fase: "ingepland", fase_sinds: nu }))));
+    const acts: Record<string, unknown>[] = [];
+    ins.forEach((c, i) => {
+      const l = blok[i];
+      acts.push({ contact_id: c.id, door: user.email, type: "import", tekst: herkomst });
+      if (l.status) acts.push({ contact_id: c.id, door: user.email, type: "fase", pijplijn: "outbound", van: null, naar: fases[i], tekst: `Status uit de lijst: ${l.status.trim()}` });
+      if (fases[i] === "ingepland") acts.push({ contact_id: c.id, door: user.email, type: "fase", pijplijn: "sales", van: null, naar: "ingepland", tekst: "Eerder ingepland volgens de lijst (geen Calendly-afspraak gekoppeld)" });
+      if (l.notitie?.trim()) acts.push({ contact_id: c.id, door: user.email, type: "notitie", tekst: `[Uit de lijst] ${l.notitie.trim()}` });
+      perFase[fases[i]] = (perFase[fases[i]] ?? 0) + 1;
+    });
+    for (let j = 0; j < acts.length; j += 500) check(await db().from("crm_activities").insert(acts.slice(j, j + 500)));
     toegevoegd += ins.length;
   }
   if (twijfel.length) {
@@ -712,7 +743,7 @@ export async function importLeads(user: CrmUser, bron: { url?: string; csv?: str
         .insert(twijfel.map((t) => ({ soort: "duplicaat", contact_id: idVoor.get(t.lead), ander_contact_id: t.ander, info: { reden: t.reden } }))),
     );
   }
-  return { toegevoegd, bestaand, dubbel, twijfel: twijfel.length, overgeslagen, zonderTelefoon: nieuw.filter((l) => !l.telefoon_norm).length, zonderProvincie: nieuw.filter((l) => !l.provincie).length };
+  return { toegevoegd, bestaand, dubbel, twijfel: twijfel.length, perFase, overgeslagen, zonderTelefoon: nieuw.filter((l) => !l.telefoon_norm).length, zonderProvincie: nieuw.filter((l) => !l.provincie).length };
 }
 
 // ---------- Beoordelen ----------
