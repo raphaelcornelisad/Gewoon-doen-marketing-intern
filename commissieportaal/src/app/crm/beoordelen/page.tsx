@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { CrmBar } from "@/components/crm/crm-bar";
 import { ReviewActies } from "@/components/crm/review-acties";
 import { acqSetters } from "@/lib/acquisitie/server";
+import { requireBeheer } from "@/lib/auth/beheer";
 import { requireCrmUser, reviewItems } from "@/lib/crm/server";
 import { wanneer } from "../format";
 
@@ -15,6 +16,7 @@ const TITEL: Record<string, string> = { duplicaat: "Mogelijk dubbele lead", boek
 export default async function Beoordelen() {
   const user = await requireCrmUser();
   if (user.rol !== "admin") redirect("/crm");
+  await requireBeheer("/crm/beoordelen");
   const [items, setters] = await Promise.all([reviewItems(), acqSetters()]);
   const lijst = setters.filter((s) => s.actief && s.rol === "setter").map((s) => ({ id: s.id, naam: s.naam }));
   return (

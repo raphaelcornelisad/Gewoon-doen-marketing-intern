@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getAdmin } from "@/lib/auth/session";
+import { getBeheerAdmin } from "@/lib/auth/beheer";
 import { db } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  if (!(await getAdmin())) return NextResponse.json({ ok: false, message: "Niet ingelogd." }, { status: 401 });
+  if (!(await getBeheerAdmin())) return NextResponse.json({ ok: false, message: "Niet ingelogd." }, { status: 401 });
   const { aan } = (await req.json().catch(() => ({}))) as { aan?: boolean };
   if (typeof aan !== "boolean") return NextResponse.json({ ok: false, message: "Ongeldig verzoek." }, { status: 400 });
   const { error } = await db().from("settings").update({ clinic_mail_test_mode: aan }).eq("id", 1);

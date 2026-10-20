@@ -7,6 +7,7 @@ import { analyseStatus } from "@/lib/crm/analyse";
 import { crmSettings } from "@/lib/crm/calendly";
 import { regels } from "@/lib/crm/grootboek";
 import { instellingenData } from "@/lib/crm/instellingen";
+import { requireBeheer } from "@/lib/auth/beheer";
 import { requireCrmUser } from "@/lib/crm/server";
 import { twilioStatus } from "@/lib/crm/twilio";
 import { env } from "@/lib/env";
@@ -26,6 +27,7 @@ function Status({ aan, tekst }: { aan: boolean; tekst: string }) {
 export default async function Instellingen() {
   const user = await requireCrmUser();
   if (user.rol !== "admin") redirect("/crm");
+  await requireBeheer("/crm/instellingen");
   const [s, data, r] = await Promise.all([crmSettings(), instellingenData(), regels()]);
   const tw = twilioStatus();
   const an = analyseStatus();

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { CrmUser } from "@/lib/crm/server";
+import { VergrendelKnop } from "./vergrendel";
 
 type L = [string, string];
 
@@ -38,7 +39,11 @@ export function CrmBar({ user, actief, open }: { user: CrmUser; actief: string; 
             <summary className={beheer.some(([h]) => h === actief) ? "is-actief" : undefined}>
               Beheer{open?.beoordelen ? <span className="crm-badge crm-badge--inline">{open.beoordelen}</span> : null}
             </summary>
-            <div className="crm-menu__lijst">{beheer.map(link)}</div>
+            <div className="crm-menu__lijst">
+              <span className="small muted crm-menu__email">🔒 Vraagt het beheerwachtwoord</span>
+              {beheer.map(link)}
+              <div className="crm-menu__voet"><VergrendelKnop /></div>
+            </div>
           </details>
         )}
         <details className="crm-menu">

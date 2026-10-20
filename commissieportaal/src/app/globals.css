@@ -402,3 +402,4 @@ body:has(.crm) .site-header__inner { max-width: 1440px; }
   .crm-menu__lijst { left: 0; right: auto; }
   .crm-top__rechts .crm-menu:last-child .crm-menu__lijst { left: auto; right: 0; }
 }
+.crm-menu__voet { border-top: 1px solid var(--rand); margin-top: 4px; padding-top: 4px; }

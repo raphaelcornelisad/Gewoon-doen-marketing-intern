@@ -11,5 +11,5 @@ export async function POST(req: Request) {
     const h = await herverwerkMislukt();
     const r = await syncCalendlyCrm();
     return { message: `Calendly gesynchroniseerd: ${r.invitees} afspraken gecontroleerd. Mislukte meldingen opnieuw: ${h.ok}/${h.geprobeerd}.` };
-  });
+  }, { beheer: true });
 }

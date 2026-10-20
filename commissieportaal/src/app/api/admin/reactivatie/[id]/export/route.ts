@@ -1,4 +1,4 @@
-import { getAdmin } from "@/lib/auth/session";
+import { getBeheerAdmin } from "@/lib/auth/beheer";
 import { toCsv } from "@/lib/reactivatie/build";
 import { campaignLists } from "@/lib/reactivatie/server";
 
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 /** CSV-export. ?filter=ja | nee | open | alle */
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await getAdmin())) return new Response("Niet ingelogd.", { status: 401 });
+  if (!(await getBeheerAdmin())) return new Response("Niet ingelogd.", { status: 401 });
   const { id } = await params;
   const filter = new URL(req.url).searchParams.get("filter") ?? "alle";
   const rows = (await campaignLists(id)).flatMap((l) =>

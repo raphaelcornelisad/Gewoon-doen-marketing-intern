@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CrmBar } from "@/components/crm/crm-bar";
 import { ImportForm } from "@/components/crm/lead-actions";
+import { requireBeheer } from "@/lib/auth/beheer";
 import { requireCrmUser } from "@/lib/crm/server";
 
 export const metadata: Metadata = { title: "Importeren · CRM" };
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function Import() {
   const user = await requireCrmUser();
   if (user.rol !== "admin") redirect("/crm");
+  await requireBeheer("/crm/import");
   return (
     <>
       <CrmBar user={user} actief="/crm/import" />

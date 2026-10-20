@@ -1,3 +1,4 @@
+import { requireBeheer } from "@/lib/auth/beheer";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CommissieActies, Herbereken } from "@/components/crm/commissie-acties";
@@ -18,6 +19,7 @@ const SOORT: Record<string, string> = { basis: "Basisvergoeding", show: "Showver
 
 export default async function Commissie({ searchParams }: { searchParams: Promise<{ p?: string; setter?: string }> }) {
   const user = await requireCrmUser();
+  if (user.rol === "admin") await requireBeheer("/crm/commissie");
   const sp = await searchParams;
   await herbereken(user.email).catch((e) => console.error("Herberekenen mislukt", e));
   const [setters, r, s] = await Promise.all([acqSetters(), regels(), crmSettings()]);

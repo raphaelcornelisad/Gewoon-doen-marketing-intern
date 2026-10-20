@@ -15,5 +15,5 @@ export async function POST(req: Request) {
       return { message: t ? `Uitbetaald: € ${(t / 100).toFixed(2).replace(".", ",")}` : "Geen goedgekeurde regels om uit te betalen." };
     }
     throw new CrmError("Onbekende actie.");
-  });
+  }, { beheer: true });
 }

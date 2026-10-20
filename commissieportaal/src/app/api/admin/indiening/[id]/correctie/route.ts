@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAdmin } from "@/lib/auth/session";
+import { getBeheerAdmin } from "@/lib/auth/beheer";
 import { effectiveCounts, validateCorrection, type Correction } from "@/lib/corrections";
 import type { Counts } from "@/lib/sheets/types";
 import { db } from "@/lib/supabase/server";
@@ -7,7 +7,7 @@ import { db } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const admin = await getAdmin();
+  const admin = await getBeheerAdmin();
   if (!admin) return NextResponse.json({ ok: false, message: "Niet ingelogd." }, { status: 401 });
   const { id } = await params;
   const v = validateCorrection((await req.json().catch(() => ({}))) as Record<string, unknown>);

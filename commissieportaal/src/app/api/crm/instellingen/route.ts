@@ -25,5 +25,5 @@ export async function POST(req: Request) {
       default:
         throw new CrmError("Onbekende instelling.");
     }
-  });
+  }, { beheer: true });
 }

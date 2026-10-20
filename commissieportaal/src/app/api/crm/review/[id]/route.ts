@@ -22,5 +22,5 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       default:
         throw new CrmError("Onbekende actie.");
     }
-  });
+  }, { beheer: true });
 }

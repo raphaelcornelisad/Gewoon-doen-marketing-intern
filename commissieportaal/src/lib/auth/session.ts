@@ -18,6 +18,8 @@ export async function getAdmin(): Promise<{ email: string } | null> {
 export async function requireAdmin(): Promise<{ email: string }> {
   const admin = await getAdmin();
   if (!admin) redirect("/crm/login");
+  const { getBeheerAdmin } = await import("./beheer");
+  if (!(await getBeheerAdmin())) redirect("/crm/beheer?next=%2Fadmin");
   return admin;
 }
 

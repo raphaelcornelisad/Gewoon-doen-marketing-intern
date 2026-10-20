@@ -134,3 +134,20 @@ describe("kanaalcontrole WhatsApp/sms", () => {
     expect(isAfmelding("stop maar met bellen, morgen beter")).toBe(false);
   });
 });
+
+import { controleerWachtwoord, hashWachtwoord, veiligPad } from "@/lib/auth/wachtwoord";
+
+describe("beheerwachtwoord", () => {
+  it("controleert hash en weigert fout wachtwoord of lege hash", () => {
+    const h = hashWachtwoord("geheim-wachtwoord-1");
+    expect(controleerWachtwoord("geheim-wachtwoord-1", h)).toBe(true);
+    expect(controleerWachtwoord("geheim-wachtwoord-2", h)).toBe(false);
+    expect(controleerWachtwoord("x", null)).toBe(false);
+    expect(hashWachtwoord("a")).not.toBe(hashWachtwoord("a"));
+  });
+  it("laat alleen interne doorverwijzingen toe", () => {
+    expect(veiligPad("/crm/instellingen")).toBe("/crm/instellingen");
+    expect(veiligPad("//evil.com")).toBe("/crm");
+    expect(veiligPad("https://evil.com")).toBe("/crm");
+  });
+});

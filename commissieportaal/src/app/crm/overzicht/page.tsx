@@ -1,3 +1,4 @@
+import { requireBeheer } from "@/lib/auth/beheer";
 import type { Metadata } from "next";
 import { CrmBar } from "@/components/crm/crm-bar";
 import { categorieLabel } from "@/components/crm/lead-actions";
@@ -24,6 +25,7 @@ const KOL: [keyof SetterStats, string][] = [
 
 export default async function Overzicht({ searchParams }: { searchParams: Promise<{ p?: string }> }) {
   const user = await requireCrmUser();
+  if (user.rol === "admin") await requireBeheer("/crm/overzicht");
   const periods = periodsFor({ start_datum: "2026-10-12" });
   const { p } = await searchParams;
   const periode = periods.find((x) => x.start === p) ?? periods[0];

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getAdmin } from "@/lib/auth/session";
+import { getBeheerAdmin } from "@/lib/auth/beheer";
 import { createCampaign } from "@/lib/reactivatie/server";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
-  if (!(await getAdmin())) return NextResponse.json({ ok: false, message: "Niet ingelogd." }, { status: 401 });
+  if (!(await getBeheerAdmin())) return NextResponse.json({ ok: false, message: "Niet ingelogd." }, { status: 401 });
   const { naam, links } = (await req.json().catch(() => ({}))) as { naam?: string; links?: string };
   const urls = (links ?? "").split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
   if (!urls.length) return NextResponse.json({ ok: false, message: "Plak minstens één sheetlink." }, { status: 422 });
