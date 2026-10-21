@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { brand } from "@/config/brand";
 import { isAdminEmail } from "@/lib/auth/token";
+import { bevestigLink, inlogOnderwerp } from "@/lib/auth/inloglink";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail/resend";
 import { db } from "@/lib/supabase/server";
@@ -21,14 +22,12 @@ export async function POST(req: Request) {
     const { data, error } = await sb.auth.admin.generateLink({ type: "magiclink", email: adminEmail });
     if (error || !data.properties?.hashed_token) throw error ?? new Error("Geen token");
 
-    const link = `${env("APP_URL").replace(/\/$/, "")}/api/admin/callback?token_hash=${encodeURIComponent(
-      data.properties.hashed_token,
-    )}`;
+    const link = bevestigLink("admin", data.properties.hashed_token);
     await sendMail({
       to: adminEmail,
-      subject: `Inloggen Gewoon Sales Doen`,
-      text: `Klik op deze link om in te loggen (1 uur geldig):\n${link}\n\nNiet aangevraagd? Dan kun je deze mail negeren.`,
-      html: `<p>Klik op de knop om in te loggen in het Gewoon Sales Doen. De link is 1 uur geldig.</p>
+      subject: inlogOnderwerp(),
+      text: `Klik op deze link om in te loggen (1 uur geldig, aangevraagd ${inlogOnderwerp().split(" · ")[1]}):\n${link}\n\nNiet aangevraagd? Dan kun je deze mail negeren.`,
+      html: `<p>Klik op de knop om in te loggen in het Gewoon Sales Doen. De link is 1 uur geldig (aangevraagd ${inlogOnderwerp().split(" · ")[1]}). Gebruik altijd de nieuwste mail.</p>
 <p><a href="${link}" style="display:inline-block;background:${brand.kleuren.primair};color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:8px">Inloggen</a></p>
 <p style="color:#5C5C5C;font-size:13px">Niet aangevraagd? Dan kun je deze mail negeren.</p>`,
     });

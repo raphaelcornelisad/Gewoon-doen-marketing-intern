@@ -1,28 +1,20 @@
-import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
-import { sessionCookie } from "@/lib/auth/session";
+import { ingelogd, leesToken, naarCrm, naarLogin, verifieer } from "@/lib/auth/inloglink";
+import { getAdmin, sessionCookie } from "@/lib/auth/session";
 import { isAdminEmail } from "@/lib/auth/token";
 import { env } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request) {
-  const url = new URL(req.url);
-  const tokenHash = url.searchParams.get("token_hash");
-  const base = env("APP_URL").replace(/\/$/, "");
-  if (!tokenHash) return NextResponse.redirect(`${base}/crm/login?fout=link`);
-
-  const sb = createClient(env("SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"), env("SUPABASE_ANON_KEY", "NEXT_PUBLIC_SUPABASE_ANON_KEY"), {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-  const { data, error } = await sb.auth.verifyOtp({ type: "magiclink", token_hash: tokenHash });
-  const email = data.user?.email;
-  if (error || !isAdminEmail(email, env("ADMIN_EMAIL"))) {
-    return NextResponse.redirect(`${base}/crm/login?fout=verlopen`);
+async function inloggen(req: Request) {
+  const tokenHash = await leesToken(req);
+  if (!tokenHash) return naarLogin("link");
+  const email = await verifieer(tokenHash);
+  if (!email || !isAdminEmail(email, env("ADMIN_EMAIL"))) {
+    if (await getAdmin()) return naarCrm();
+    return naarLogin("verlopen");
   }
-
-  const res = NextResponse.redirect(`${base}/crm`);
-  const c = sessionCookie(email!);
-  res.cookies.set(c.name, c.value, c.options);
-  return res;
+  return ingelogd("admin", sessionCookie(email));
 }
+
+export const GET = inloggen;
+export const POST = inloggen;

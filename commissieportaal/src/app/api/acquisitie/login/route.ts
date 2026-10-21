@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { brand } from "@/config/brand";
 import { acqSetterByEmail } from "@/lib/acquisitie/server";
+import { bevestigLink, inlogOnderwerp } from "@/lib/auth/inloglink";
 import { env } from "@/lib/env";
 import { sendMail } from "@/lib/mail/resend";
 import { db } from "@/lib/supabase/server";
@@ -17,12 +18,12 @@ export async function POST(req: Request) {
     await sb.auth.admin.createUser({ email: setter.email, email_confirm: true }).catch(() => null);
     const { data, error } = await sb.auth.admin.generateLink({ type: "magiclink", email: setter.email });
     if (error || !data.properties?.hashed_token) throw error ?? new Error("Geen token");
-    const link = `${env("APP_URL").replace(/\/$/, "")}/api/acquisitie/callback?token_hash=${encodeURIComponent(data.properties.hashed_token)}`;
+    const link = bevestigLink("setter", data.properties.hashed_token);
     await sendMail({
       to: setter.email,
-      subject: `Inloggen Gewoon Sales Doen`,
-      text: `Hoi ${setter.naam},\n\nKlik op deze link om in te loggen (1 uur geldig):\n${link}`,
-      html: `<p>Hoi ${setter.naam},</p><p>Klik op de knop om in te loggen. De link is 1 uur geldig.</p><p><a href="${link}" style="display:inline-block;background:${brand.kleuren.primair};color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:8px">Inloggen</a></p>`,
+      subject: inlogOnderwerp(),
+      text: `Hoi ${setter.naam},\n\nKlik op deze link om in te loggen (1 uur geldig, aangevraagd ${inlogOnderwerp().split(" · ")[1]}):\n${link}`,
+      html: `<p>Hoi ${setter.naam},</p><p>Klik op de knop om in te loggen. De link is 1 uur geldig (aangevraagd ${inlogOnderwerp().split(" · ")[1]}). Gebruik altijd de nieuwste mail.</p><p><a href="${link}" style="display:inline-block;background:${brand.kleuren.primair};color:#fff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:8px">Inloggen</a></p>`,
     });
   } catch (e) {
     console.error("Inloglink acquisitie niet verstuurd", e);
