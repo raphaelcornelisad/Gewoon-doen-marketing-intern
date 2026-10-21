@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { CrmBar } from "@/components/crm/crm-bar";
 import { OntkoppelKnop } from "@/components/crm/google-knoppen";
 import { acqSetters } from "@/lib/acquisitie/server";
 import { googleAan, koppelingen } from "@/lib/crm/google";
-import { requireCrmUser } from "@/lib/crm/server";
+import { getCrmUser } from "@/lib/crm/server";
 
 export const metadata: Metadata = { title: "Koppelingen · CRM" };
 export const dynamic = "force-dynamic";
@@ -15,8 +16,9 @@ const FOUT: Record<string, string> = {
   "alleen-setters": "Koppelingen zijn voor setters en salesmedewerkers.",
 };
 
-export default async function Koppelingen({ searchParams }: { searchParams: Promise<{ ok?: string; fout?: string }> }) {
-  const user = await requireCrmUser();
+export default async function Koppelingen({ searchParams }: { searchParams: Promise<{ ok?: string; fout?: string; verplicht?: string }> }) {
+  const user = await getCrmUser();
+  if (!user) redirect("/crm/login");
   const sp = await searchParams;
   const [alle, setters] = await Promise.all([koppelingen(), user.rol === "admin" ? acqSetters() : Promise.resolve([])]);
   const mijn = user.setter ? alle.get(user.setter.id) : undefined;
@@ -24,6 +26,11 @@ export default async function Koppelingen({ searchParams }: { searchParams: Prom
     <>
       <CrmBar user={user} actief="/crm/koppelingen" />
       <h1>Koppelingen</h1>
+      {sp.verplicht && !mijn && (
+        <div className="alert">
+          <strong>Koppel eerst je Google Agenda.</strong> Dit is verplicht voordat je het CRM kunt gebruiken: elk terugbelmoment en elke taak die je plant komt dan automatisch met een herinnering in je eigen agenda.
+        </div>
+      )}
       {sp.ok && <div className="notice">Google Agenda is gekoppeld ✓ Je terugbelmomenten en taken verschijnen nu automatisch in je agenda.</div>}
       {sp.fout && <div className="alert">{FOUT[sp.fout] ?? decodeURIComponent(sp.fout)}</div>}
       {!googleAan() && <div className="alert">De Google-koppeling is nog niet ingesteld (GOOGLE_CLIENT_ID en GOOGLE_CLIENT_SECRET ontbreken).</div>}
@@ -40,6 +47,7 @@ export default async function Koppelingen({ searchParams }: { searchParams: Prom
           </div>
           <div className="crm-koppeling__knoppen">
             <a className="button button--small" href="/api/google/start">{mijn ? (mijn.fout ? "Opnieuw koppelen" : "Ander account koppelen") : "Koppel Google Agenda"}</a>
+            {mijn && sp.ok && <a className="button button--small button--ghost" href="/crm/bellen">Naar Bellen →</a>}
             {mijn && <OntkoppelKnop />}
           </div>
         </section>

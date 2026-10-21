@@ -26,7 +26,7 @@ import {
   type ImportLead,
   type Pijplijn,
 } from "./core";
-import { syncOpvolging, syncTaak } from "./google";
+import { googleAan, koppeling, syncOpvolging, syncTaak } from "./google";
 import { herbereken } from "./grootboek";
 import { provincieVoor } from "./provincies";
 import { huidigeCrmId } from "./werkruimte";
@@ -73,6 +73,8 @@ export async function getCrmUser(): Promise<CrmUser | null> {
 export async function requireCrmUser(): Promise<CrmUser> {
   const u = await getCrmUser();
   if (!u) redirect("/crm/login");
+  // Verplicht voor setters: eerst Google Agenda koppelen (de koppelpagina zelf gebruikt getCrmUser).
+  if (u.rol === "setter" && googleAan() && !(await koppeling(u.setter.id))) redirect("/crm/koppelingen?verplicht=1");
   return u;
 }
 
