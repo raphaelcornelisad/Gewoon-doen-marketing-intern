@@ -651,7 +651,8 @@ export async function addTask(user: CrmUser, contactId: string, titel: string, v
   if (!titel.trim()) throw new CrmError("Geef de taak een titel.");
   if (vervaltOp && Number.isNaN(Date.parse(vervaltOp))) throw new CrmError("Ongeldige datum.");
   const taak = check(await db().from("crm_tasks").insert({ contact_id: c.id, titel: titel.trim().slice(0, 300), vervalt_op: vervaltOp || null, toegewezen_aan: user.setter?.id ?? c.eigenaar_id, door: user.email }).select("id").single()) as { id: string };
-  if (vervaltOp) after(() => syncTaak(taak.id));
+  // Direct (niet pas na de response) zodat de herinnering er zeker staat; fouten blokkeren de taak niet.
+  if (vervaltOp) await syncTaak(taak.id);
   await log({ contact_id: c.id, ...actor(user), type: "taak", tekst: `Taak: ${titel.trim()}` });
 }
 

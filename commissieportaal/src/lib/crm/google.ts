@@ -151,6 +151,7 @@ async function zetAfspraak(setterId: string, eventId: string | null, a: Afspraak
     reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 10 }, { method: "popup", minutes: 0 }] },
     source: { title: "Gewoon Sales Doen", url: basis() + "/crm" },
   };
+  if (Number.isNaN(start.getTime())) throw new Error(`Ongeldig tijdstip: ${a.start}`);
   let r = eventId ? await api(tok, `/${encodeURIComponent(eventId)}`, "PATCH", body) : null;
   if (!r || r.status === 404 || r.status === 410) r = await api(tok, "", "POST", body);
   if (!r.ok) {
@@ -172,7 +173,8 @@ const leadLink = (id: string) => `${basis()}/crm/lead/${id}`;
 export async function syncOpvolging(contactId: string) {
   try {
     if (!googleAan()) return;
-    const { data } = await db().from("crm_contacts").select("id, salon_naam, contactpersoon, telefoon_norm, volgende_opvolging_op, eigenaar_id, niet_benaderen, google_event_id, google_event_setter").eq("id", contactId).maybeSingle();
+    const { data, error } = await db().from("crm_contacts").select("id, salon_naam, contactpersoon, telefoon_norm, volgende_opvolging_op, eigenaar_id, niet_benaderen, google_event_id, google_event_setter").eq("id", contactId).maybeSingle();
+    if (error) throw new Error(error.message);
     const c = data as { id: string; salon_naam: string; contactpersoon: string | null; telefoon_norm: string | null; volgende_opvolging_op: string | null; eigenaar_id: string | null; niet_benaderen: boolean; google_event_id: string | null; google_event_setter: string | null } | null;
     if (!c) return;
     const doel = c.volgende_opvolging_op && !c.niet_benaderen ? c.eigenaar_id : null;
@@ -198,7 +200,8 @@ export async function syncOpvolging(contactId: string) {
 export async function syncTaak(taskId: string) {
   try {
     if (!googleAan()) return;
-    const { data } = await db().from("crm_tasks").select("id, titel, vervalt_op, gedaan_op, toegewezen_aan, contact_id, google_event_id, google_event_setter, contact:crm_contacts(salon_naam, telefoon_norm)").eq("id", taskId).maybeSingle();
+    const { data, error } = await db().from("crm_tasks").select("id, titel, vervalt_op, gedaan_op, toegewezen_aan, contact_id, google_event_id, google_event_setter, contact:crm_contacts(salon_naam, telefoon_norm)").eq("id", taskId).maybeSingle();
+    if (error) throw new Error(error.message);
     const t = data as unknown as { id: string; titel: string; vervalt_op: string | null; gedaan_op: string | null; toegewezen_aan: string | null; contact_id: string; google_event_id: string | null; google_event_setter: string | null; contact: { salon_naam: string; telefoon_norm: string | null } | null } | null;
     if (!t) return;
     const doel = t.vervalt_op && !t.gedaan_op ? t.toegewezen_aan : null;
@@ -218,4 +221,22 @@ export async function syncTaak(taskId: string) {
   } catch (x) {
     console.error("Google Agenda (taak) mislukt", x);
   }
+}
+
+/**
+ * Vangnet (cron en na koppelen): alles wat in de toekomst ligt maar nog geen agenda-afspraak heeft, alsnog zetten.
+ * Zo mist een setter geen herinnering als een directe synchronisatie ooit niet doorkwam.
+ */
+export async function synchroniseerOpenstaand(setterId?: string) {
+  if (!googleAan()) return { leads: 0, taken: 0 };
+  const nu = new Date().toISOString();
+  const gekoppeld = setterId ? [setterId] : [...(await koppelingen()).keys()];
+  if (!gekoppeld.length) return { leads: 0, taken: 0 };
+  const [{ data: leads }, { data: taken }] = await Promise.all([
+    db().from("crm_contacts").select("id").in("eigenaar_id", gekoppeld).eq("niet_benaderen", false).gt("volgende_opvolging_op", nu).is("google_event_id", null).limit(200),
+    db().from("crm_tasks").select("id").in("toegewezen_aan", gekoppeld).is("gedaan_op", null).gt("vervalt_op", nu).is("google_event_id", null).limit(200),
+  ]);
+  for (const l of (leads ?? []) as { id: string }[]) await syncOpvolging(l.id);
+  for (const t of (taken ?? []) as { id: string }[]) await syncTaak(t.id);
+  return { leads: leads?.length ?? 0, taken: taken?.length ?? 0 };
 }
