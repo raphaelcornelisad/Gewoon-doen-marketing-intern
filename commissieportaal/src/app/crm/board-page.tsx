@@ -63,6 +63,16 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
     }
   }
 
+  // Open taken per lead (badge op het taakicoon).
+  const taken = new Map<string, number>();
+  if (!gesprekken && cards.length) {
+    const ids = cards.map((c) => c.contact_id);
+    for (let i = 0; i < ids.length; i += 300) {
+      const rows = await all<{ contact_id: string }>((f, t) => db().from("crm_tasks").select("contact_id").is("gedaan_op", null).in("contact_id", ids.slice(i, i + 300)).order("id").range(f, t));
+      for (const r of rows) taken.set(r.contact_id, (taken.get(r.contact_id) ?? 0) + 1);
+    }
+  }
+
   // Gesprekken (WhatsApp/sms) van de leads in deze pijplijn.
   const berichten = new Map<string, { laatste: { tekst: string; richting: string; kanaal: string; status: string; created_at: string }; aantal: number; open: number }>();
   if (gesprekken && cards.length) {
@@ -108,6 +118,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       belpogingen: k.belpogingen,
       notities: notities.get(k.id)?.aantal ?? 0,
       laatsteNotitie: notities.get(k.id)?.laatste ?? null,
+      taken: taken.get(k.id) ?? 0,
       vergrendeld: pijplijn === "sales" ? !(user.rol === "admin" || (user.rol === "sales" && c.verkoper_id === user.setter.id)) : !(user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id))),
       bewerkbaar: user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id)),
     };

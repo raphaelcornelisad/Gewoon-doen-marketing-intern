@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Icon, initialen, waLink } from "./icons";
-import { FaseVenster } from "./acties";
+import { FaseVenster, TaakVenster } from "./acties";
 import { BelKnop } from "./bel-knop";
 import { NotitiePaneel } from "./notitie-paneel";
 import { post, Sheet, TagEditor } from "./sheet";
@@ -24,6 +24,8 @@ export interface BoardCard {
   afspraak: string | null;
   belpogingen: number;
   notities: number;
+  /** Open taken */
+  taken: number;
   laatsteNotitie: { tekst: string; door: string | null; created_at: string } | null;
   /** Fase mag niet worden aangepast door deze gebruiker */
   vergrendeld: boolean;
@@ -31,7 +33,7 @@ export interface BoardCard {
   bewerkbaar: boolean;
 }
 
-type Paneel = { soort: "fase" | "tags" | "notitie" | "eigenaar"; card: BoardCard } | null;
+type Paneel = { soort: "fase" | "tags" | "notitie" | "taak" | "eigenaar"; card: BoardCard } | null;
 
 const MAX = 2000;
 
@@ -237,9 +239,9 @@ export function Board({
                     <div className="crm-card__actions">
                       {tel ? <BelKnop className="crm-iconbtn" telefoon={tel} salon={c.salon}><Icon name="phone" /></BelKnop> : <span className="crm-iconbtn is-off"><Icon name="phone" /></span>}
                       {wa ? <Link className="crm-iconbtn" href={`/crm/inbox?lead=${c.contactId}`} aria-label="Chat openen"><Icon name="chat" /></Link> : <span className="crm-iconbtn is-off"><Icon name="chat" /></span>}
-                      <button type="button" className="crm-iconbtn" aria-label={`Tags (${c.tags.length})`} disabled={!c.bewerkbaar} onClick={() => setPaneel({ soort: "tags", card: c })}>
-                        <Icon name="tag" />
-                        {c.tags.length > 0 && <span className="crm-badge">{c.tags.length}</span>}
+                      <button type="button" className="crm-iconbtn" aria-label={`Taak toevoegen (${c.taken} open)`} onClick={() => setPaneel({ soort: "taak", card: c })}>
+                        <Icon name="taak" />
+                        {c.taken > 0 && <span className="crm-badge">{c.taken}</span>}
                       </button>
                       <button
                         type="button"
@@ -293,6 +295,7 @@ export function Board({
           <TagEditor contactId={paneel.card.contactId} tags={paneel.card.tags} alle={alleTags} />
         </Sheet>
       )}
+      {paneel?.soort === "taak" && <TaakVenster contactId={paneel.card.contactId} onSluit={sluit} />}
       {paneel?.soort === "notitie" && (
         <NotitiePaneel contactId={paneel.card.contactId} titel={`Notitie · ${paneel.card.salon}`} onSluit={sluit} />
       )}
