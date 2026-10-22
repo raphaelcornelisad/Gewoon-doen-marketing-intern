@@ -131,7 +131,6 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
           fasesSales={FASES.sales}
           setters={actieveSetters}
           eigenaar={k.eigenaar_id}
-          notities={notities}
         />
 
         <section className="card nt-kaart" aria-label="Notities">

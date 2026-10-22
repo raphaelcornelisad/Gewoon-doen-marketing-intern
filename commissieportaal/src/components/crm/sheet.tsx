@@ -103,11 +103,15 @@ export function QuickNote({ contactId, onDone }: { contactId: string; onDone: ()
         setBusy(true);
         const r = await post(`/api/crm/contact/${contactId}/notitie`, { tekst: t });
         setBusy(false);
-        if (r.ok) onDone();
+        if (r.ok) {
+          setT("");
+          setFout(null);
+          onDone();
+        }
         else setFout(r.message ?? "Opslaan mislukt.");
       }}
     >
-      <textarea rows={4} autoFocus value={t} onChange={(e) => setT(e.target.value)} placeholder="Bv. 'Eigenaar terugbellen dinsdag na 14:00'" required />
+      <textarea rows={3} value={t} onChange={(e) => setT(e.target.value)} placeholder="Bv. 'Eigenaar terugbellen dinsdag na 14:00'" required />
       <button type="submit" className="button button--small" disabled={busy}>{busy ? "Opslaan…" : "Notitie opslaan"}</button>
       {fout && <span className="small field-error">{fout}</span>}
     </form>

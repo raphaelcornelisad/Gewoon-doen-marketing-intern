@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { Icon, initialen, waLink } from "./icons";
 import { FaseVenster } from "./acties";
 import { BelKnop } from "./bel-knop";
-import { post, QuickNote, Sheet, TagEditor } from "./sheet";
+import { NotitiePaneel } from "./notitie-paneel";
+import { post, Sheet, TagEditor } from "./sheet";
 
 export interface BoardCard {
   id: string;
@@ -293,10 +294,7 @@ export function Board({
         </Sheet>
       )}
       {paneel?.soort === "notitie" && (
-        <Sheet titel={`Notitie · ${paneel.card.salon}`} onClose={sluit}>
-          <QuickNote contactId={paneel.card.contactId} onDone={sluit} />
-          <p className="small"><Link href={`/crm/lead/${paneel.card.contactId}`}>Alle notities bekijken →</Link></p>
-        </Sheet>
+        <NotitiePaneel contactId={paneel.card.contactId} titel={`Notitie · ${paneel.card.salon}`} onSluit={sluit} />
       )}
       {paneel?.soort === "eigenaar" && (
         <Sheet titel={`${pijplijn === "sales" ? "Ingepland door" : "Eigenaar"} · ${paneel.card.salon}`} onClose={sluit}>
