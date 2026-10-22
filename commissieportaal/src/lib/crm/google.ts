@@ -150,6 +150,7 @@ async function zetAfspraak(setterId: string, eventId: string | null, a: Afspraak
     end: { dateTime: new Date(start.getTime() + a.minuten * 60000).toISOString(), timeZone: "Europe/Amsterdam" },
     reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 10 }, { method: "popup", minutes: 0 }] },
     source: { title: "Gewoon Sales Doen", url: basis() + "/crm" },
+    extendedProperties: { private: { gdm: "1" } },
   };
   if (Number.isNaN(start.getTime())) throw new Error(`Ongeldig tijdstip: ${a.start}`);
   let r = eventId ? await api(tok, `/${encodeURIComponent(eventId)}`, "PATCH", body) : null;
@@ -239,4 +240,29 @@ export async function synchroniseerOpenstaand(setterId?: string) {
   for (const l of (leads ?? []) as { id: string }[]) await syncOpvolging(l.id);
   for (const t of (taken ?? []) as { id: string }[]) await syncTaak(t.id);
   return { leads: leads?.length ?? 0, taken: taken?.length ?? 0 };
+}
+
+export interface GoogleEvent {
+  id: string;
+  titel: string;
+  start: string;
+  heleDag: boolean;
+  link: string | null;
+}
+
+/** Eigen afspraken uit Google Agenda (niet die het CRM zelf plaatste), om live in de CRM-agenda te tonen. */
+export async function googleAgenda(setterId: string, van: string, tot: string): Promise<{ items: GoogleEvent[]; fout: string | null }> {
+  if (!googleAan()) return { items: [], fout: null };
+  const tok = await accessToken(setterId);
+  if (!tok) return { items: [], fout: "Geen geldige Google-koppeling." };
+  const q = new URLSearchParams({ timeMin: van, timeMax: tot, singleEvents: "true", orderBy: "startTime", maxResults: "250" });
+  const r = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${q}`, { headers: { Authorization: `Bearer ${tok}` }, cache: "no-store" }).catch(() => null);
+  if (!r?.ok) return { items: [], fout: `Google Agenda niet bereikbaar (${r?.status ?? "netwerk"}).` };
+  const d = (await r.json()) as { items?: { id: string; status?: string; summary?: string; htmlLink?: string; start?: { dateTime?: string; date?: string }; source?: { title?: string }; extendedProperties?: { private?: Record<string, string> } }[] };
+  return {
+    fout: null,
+    items: (d.items ?? [])
+      .filter((x) => x.status !== "cancelled" && x.extendedProperties?.private?.gdm !== "1" && x.source?.title !== "Gewoon Sales Doen")
+      .map((x) => ({ id: x.id, titel: x.summary || "(geen titel)", start: x.start?.dateTime ?? `${x.start?.date}T00:00:00`, heleDag: !x.start?.dateTime, link: x.htmlLink ?? null })),
+  };
 }

@@ -42,3 +42,30 @@ export async function agenda(user: CrmUser, van: string, tot: string): Promise<A
       return r.setter_id === user.setter.id || r.contact.eigenaar_id === user.setter.id;
     });
 }
+
+export interface Herinnering {
+  id: string;
+  soort: "taak" | "terugbellen";
+  start_op: string;
+  titel: string;
+  setter_id: string | null;
+  contact: { id: string; salon_naam: string } | null;
+  inGoogle: boolean;
+}
+
+/** Open taken en terugbelmomenten (dezelfde die naar Google Agenda gaan). Setters zien alleen hun eigen. */
+export async function herinneringen(user: CrmUser, van: string, tot: string): Promise<Herinnering[]> {
+  const crm = await huidigeCrmId();
+  const eigen = user.rol === "admin" ? null : user.setter.id;
+  let tq = db().from("crm_tasks").select("id, titel, vervalt_op, toegewezen_aan, google_event_id, contact:crm_contacts!inner(id, salon_naam, crm_id)").is("gedaan_op", null).gte("vervalt_op", van).lt("vervalt_op", tot).eq("contact.crm_id", crm);
+  if (eigen) tq = tq.eq("toegewezen_aan", eigen);
+  let cq = db().from("crm_contacts").select("id, salon_naam, volgende_opvolging_op, eigenaar_id, google_event_id").eq("crm_id", crm).eq("niet_benaderen", false).gte("volgende_opvolging_op", van).lt("volgende_opvolging_op", tot);
+  if (eigen) cq = cq.eq("eigenaar_id", eigen);
+  const [t, c] = await Promise.all([tq.order("vervalt_op").limit(1000), cq.order("volgende_opvolging_op").limit(1000)]);
+  const taken = (t.data ?? []) as unknown as { id: string; titel: string; vervalt_op: string; toegewezen_aan: string | null; google_event_id: string | null; contact: { id: string; salon_naam: string } | null }[];
+  const leads = (c.data ?? []) as { id: string; salon_naam: string; volgende_opvolging_op: string; eigenaar_id: string | null; google_event_id: string | null }[];
+  return [
+    ...taken.map((x) => ({ id: `t-${x.id}`, soort: "taak" as const, start_op: x.vervalt_op, titel: x.titel, setter_id: x.toegewezen_aan, contact: x.contact ? { id: x.contact.id, salon_naam: x.contact.salon_naam } : null, inGoogle: !!x.google_event_id })),
+    ...leads.map((x) => ({ id: `c-${x.id}`, soort: "terugbellen" as const, start_op: x.volgende_opvolging_op, titel: "Terugbellen", setter_id: x.eigenaar_id, contact: { id: x.id, salon_naam: x.salon_naam }, inGoogle: !!x.google_event_id })),
+  ];
+}
