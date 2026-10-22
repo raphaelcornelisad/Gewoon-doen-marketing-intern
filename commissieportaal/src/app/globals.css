@@ -294,9 +294,9 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
 .crm-iconbtn--rond { border-radius: 50%; background: var(--vlak); width: 44px; height: 44px; }
 .crm-badge { position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; border-radius: 9px; background: var(--primair); color: var(--wit); font-size: 11px; font-weight: 800; display: grid; place-items: center; padding: 0 4px; }
 .crm-chip--btn { cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; }
-.crm-sheet { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.crm-sheet { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; overscroll-behavior: contain; display: flex; align-items: flex-end; justify-content: center; }
 @media (min-width: 700px) { .crm-sheet { align-items: center; } }
-.crm-sheet__panel { background: var(--wit); width: 100%; max-width: 480px; max-height: 85vh; overflow: auto; border-radius: 16px 16px 0 0; padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; }
+.crm-sheet__panel { background: var(--wit); width: 100%; max-width: 480px; max-height: 85vh; max-height: 85dvh; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; border-radius: 16px 16px 0 0; padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; }
 @media (min-width: 700px) { .crm-sheet__panel { border-radius: 16px; } }
 .crm-sheet__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .crm-sheet__list { display: grid; gap: 8px; }
@@ -305,8 +305,15 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
 .crm-contactcard__info { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
 .crm-contactcard__info span { display: inline-flex; gap: 8px; align-items: center; }
 .crm-contactcard__actions { grid-column: 1 / -1; display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-.crm-tabs { display: flex; gap: 4px; border-bottom: 3px solid var(--rand); overflow-x: auto; }
+.crm-tabs { display: flex; gap: 4px; border-bottom: 3px solid var(--rand); overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain; touch-action: pan-x; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; scroll-padding-inline: 16px; scrollbar-width: none; }
+.crm-tabs::-webkit-scrollbar { display: none; }
 .crm-tabs a { padding: 10px 12px; font-weight: 700; color: var(--tekst-zacht); text-decoration: none; margin-bottom: -3px; border-bottom: 3px solid transparent; white-space: nowrap; }
+.crm-kiezer { font: inherit; font-weight: 400; display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 12px; border: 1px solid var(--rand); border-radius: 10px; background: var(--wit); color: var(--tekst); text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.crm-kiezer:disabled { opacity: .6; cursor: default; }
+.crm-kiezer__lijst { list-style: none; margin: 0; padding: 0; display: grid; }
+.crm-kiezer__lijst li + li { border-top: 1px solid var(--rand); }
+.crm-kiezer__lijst button { font: inherit; display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 14px 4px; background: none; border: 0; color: var(--tekst); text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.crm-kiezer__lijst button[aria-pressed="true"] { font-weight: 700; }
 .crm-tabs a[aria-current="page"] { color: var(--primair); border-bottom-color: var(--primair); }
 .crm-details { background: var(--vlak); border-radius: 12px; padding: 16px; display: grid; gap: 14px; }
 .crm-details > label, .crm-details .crm-field { display: grid; gap: 6px; font-weight: 600; }

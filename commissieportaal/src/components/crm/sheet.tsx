@@ -10,6 +10,18 @@ export async function post(url: string, body: unknown) {
   return { ok: !!res?.ok && !!data?.ok, message: (data?.message as string | undefined) ?? null, data };
 }
 
+/** Zet de pagina achter een paneel vast, zodat swipen op iOS alleen het paneel beweegt. */
+function vergrendelScroll() {
+  const b = document.body;
+  const y = window.scrollY;
+  const oud = { position: b.style.position, top: b.style.top, width: b.style.width, overflow: b.style.overflow };
+  Object.assign(b.style, { position: "fixed", top: `-${y}px`, width: "100%", overflow: "hidden" });
+  return () => {
+    Object.assign(b.style, oud);
+    window.scrollTo(0, y);
+  };
+}
+
 /** Paneel dat onderin (mobiel) of als venster (desktop) opent. */
 export function Sheet({ titel, onClose, children }: { titel: string; onClose: () => void; children: React.ReactNode }) {
   useEffect(() => {
@@ -17,6 +29,7 @@ export function Sheet({ titel, onClose, children }: { titel: string; onClose: ()
     window.addEventListener("keydown", k);
     return () => window.removeEventListener("keydown", k);
   }, [onClose]);
+  useEffect(() => vergrendelScroll(), []);
   return (
     <div className="crm-sheet" role="dialog" aria-modal="true" aria-label={titel} onClick={onClose}>
       <div className="crm-sheet__panel" onClick={(e) => e.stopPropagation()}>

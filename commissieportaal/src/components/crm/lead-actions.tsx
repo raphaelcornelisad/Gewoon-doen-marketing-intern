@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Sheet } from "./sheet";
 
 async function post(url: string, body: unknown) {
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
@@ -173,26 +174,53 @@ export function SyncButton() {
   );
 }
 
+/** Keuzeveld met een eigen paneel: op de telefoon beweegt alleen de lijst, niet de pagina erachter. */
+function Kiezer({ label, value, opties, disabled, onKies }: { label: string; value: string; opties: { key: string; label: string }[]; disabled: boolean; onKies: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const huidig = opties.find((o) => o.key === value)?.label ?? "Kies…";
+  return (
+    <>
+      <button type="button" className="crm-kiezer" disabled={disabled} aria-haspopup="dialog" aria-label={`${label}: ${huidig}`} onClick={() => setOpen(true)}>
+        <span>{huidig}</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m7 9 5-5 5 5M7 15l5 5 5-5" /></svg>
+      </button>
+      {open && (
+        <Sheet titel={label} onClose={() => setOpen(false)}>
+          <ul className="crm-kiezer__lijst">
+            {opties.map((o) => (
+              <li key={o.key}>
+                <button type="button" aria-pressed={o.key === value} onClick={() => { setOpen(false); if (o.key !== value) onKies(o.key); }}>
+                  <span>{o.label}</span>{o.key === value && <span className="fm-vink">✓</span>}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </Sheet>
+      )}
+    </>
+  );
+}
+
 export function StatusSelect({ oppId, fase, fases, disabled, label = "Status" }: { oppId: string; fase: string; fases: { key: string; label: string }[]; disabled: boolean; label?: string }) {
   const a = useAction();
   const [v, setV] = useState(fase);
   return (
-    <label className="crm-field">
+    <div className="crm-field">
       {label}
-      <select
+      <Kiezer
+        label={label}
         value={v}
+        opties={fases}
         disabled={disabled || a.busy}
-        onChange={async (e) => {
+        onKies={async (nieuw) => {
           const oud = v;
-          setV(e.target.value);
-          const r = await a.run(`/api/crm/opp/${oppId}`, { fase: e.target.value }, "Status aangepast.");
+          setV(nieuw);
+          const r = await a.run(`/api/crm/opp/${oppId}`, { fase: nieuw }, "Status aangepast.");
           if (!r.ok) setV(oud);
         }}
-      >
-        {fases.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
-      </select>
+      />
       <Msg m={a.msg} />
-    </label>
+    </div>
   );
 }
 
@@ -222,25 +250,29 @@ export function WaardeField({ oppId, cents, disabled }: { oppId: string; cents: 
 
 export function OwnerField({ contactId, oppId, value, setters, label, soort }: { contactId: string; oppId?: string; value: string; setters: { id: string; naam: string }[]; label: string; soort: "eigenaar" | "setter" | "verkoper" }) {
   const a = useAction();
+  const [v, setV] = useState(value);
   return (
-    <label className="crm-field">
+    <div className="crm-field">
       {label}
-      <select
-        defaultValue={value}
+      <Kiezer
+        label={label}
+        value={v}
+        opties={[{ key: "", label: "Niet toegewezen" }, ...setters.map((s) => ({ key: s.id, label: s.naam }))]}
         disabled={a.busy}
-        onChange={(e) =>
-          soort === "setter"
-            ? a.run(`/api/crm/opp/${oppId}`, { setterId: e.target.value || null })
-            : soort === "verkoper"
-              ? a.run(`/api/crm/opp/${oppId}`, { verkoperId: e.target.value || null })
-              : a.run(`/api/crm/contact/${contactId}`, { eigenaar_id: e.target.value || null })
-        }
-      >
-        <option value="">Niet toegewezen</option>
-        {setters.map((s) => <option key={s.id} value={s.id}>{s.naam}</option>)}
-      </select>
+        onKies={async (nieuw) => {
+          const oud = v;
+          setV(nieuw);
+          const r =
+            soort === "setter"
+              ? await a.run(`/api/crm/opp/${oppId}`, { setterId: nieuw || null })
+              : soort === "verkoper"
+                ? await a.run(`/api/crm/opp/${oppId}`, { verkoperId: nieuw || null })
+                : await a.run(`/api/crm/contact/${contactId}`, { eigenaar_id: nieuw || null });
+          if (!r.ok) setV(oud);
+        }}
+      />
       <Msg m={a.msg} />
-    </label>
+    </div>
   );
 }
 

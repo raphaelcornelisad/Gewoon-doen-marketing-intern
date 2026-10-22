@@ -130,7 +130,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
 
         <nav className="crm-tabs" aria-label="Onderdelen">
           {TABS.map(([key, label]) => (
-            <Link key={key} href={`?tab=${key}`} aria-current={tab === key ? "page" : undefined}>
+            <Link key={key} href={`?tab=${key}`} scroll={false} replace aria-current={tab === key ? "page" : undefined}>
               {label}
               {key === "gesprekken" ? tel(d.calls.length) : key === "berichten" ? tel(d.berichten.length) : key === "afspraken" ? tel(d.afspraken.length) : key === "taken" ? tel(openTaken) : key === "notities" ? tel(notities.length) : ""}
             </Link>
