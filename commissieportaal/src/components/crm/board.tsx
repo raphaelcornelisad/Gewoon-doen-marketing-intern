@@ -45,6 +45,7 @@ export function Board({
   alleTags,
   setters,
   rol,
+  mijnId = null,
 }: {
   pijplijn: "outbound" | "sales";
   fases: { key: string; label: string }[];
@@ -53,6 +54,8 @@ export function Board({
   alleTags: string[];
   setters: { id: string; naam: string }[] | null;
   rol: "admin" | "setter";
+  /** Eigen setter-id (alleen voor setters): om een vrije lead zelf op te pakken */
+  mijnId?: string | null;
 }) {
   const router = useRouter();
   const [cards, setCards] = useState(initial);
@@ -312,11 +315,14 @@ export function Board({
               <button type="button" className="crm-stage" onClick={() => eigenaar(paneel.card, null)}>Niemand</button>
             </div>
           )}
-          {rol === "setter" && pijplijn === "outbound" && !paneel.card.wie && (
+          {rol === "setter" && pijplijn === "outbound" && !paneel.card.wie && mijnId && (
             <>
-              <p className="small muted" style={{ margin: 0 }}>Een lead wordt van jou na een geregistreerde belpoging.</p>
-              <Link href={`/crm/bellen?lead=${paneel.card.contactId}`} className="button button--small">Deze lead bellen</Link>
+              <button type="button" className="button" onClick={() => eigenaar(paneel.card, mijnId)}>Mezelf toevoegen als eigenaar</button>
+              <Link href={`/crm/bellen?lead=${paneel.card.contactId}`} className="button button--small button--ghost">Deze lead bellen</Link>
             </>
+          )}
+          {rol === "setter" && pijplijn === "outbound" && mijnId && paneel.card.wie?.id === mijnId && (
+            <button type="button" className="button button--small button--ghost" onClick={() => eigenaar(paneel.card, null)}>Lead vrijgeven</button>
           )}
         </Sheet>
       )}

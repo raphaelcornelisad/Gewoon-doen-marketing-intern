@@ -225,6 +225,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
           alleTags={opties.tags}
           setters={user.rol === "admin" ? setters.filter((x) => x.actief).map((x) => ({ id: x.id, naam: x.naam })) : null}
           rol={user.rol === "admin" ? "admin" : "setter"}
+          mijnId={user.rol === "setter" ? user.setter.id : null}
         />
       )}
     </>

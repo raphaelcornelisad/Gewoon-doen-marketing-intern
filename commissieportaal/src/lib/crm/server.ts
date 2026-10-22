@@ -605,16 +605,20 @@ export async function updateContact(user: CrmUser, id: string, input: ContactInp
     if (input.niet_benaderen) data.volgende_opvolging_op = null;
   }
   if (input.eigenaar_id !== undefined) {
-    if (user.rol !== "admin") throw new CrmError("Alleen de admin wijst leads toe.", 403);
+    // Setter mag een vrije lead zelf oppakken of de eigen lead weer vrijgeven; anderen toewijzen kan alleen de admin.
+    const zelf = user.rol === "setter" && ((input.eigenaar_id === user.setter.id && !c.eigenaar_id) || (!input.eigenaar_id && c.eigenaar_id === user.setter.id));
+    if (user.rol !== "admin" && !zelf) throw new CrmError(c.eigenaar_id && c.eigenaar_id !== user.setter?.id ? "Deze lead is al van een andere setter." : "Alleen de admin wijst leads toe.", 403);
     data.eigenaar_id = input.eigenaar_id || null;
     if (input.eigenaar_id && !c.oorspronkelijke_setter_id) data.oorspronkelijke_setter_id = input.eigenaar_id;
   }
-  if (input.volgende_opvolging_op !== undefined || input.niet_benaderen !== undefined || input.eigenaar_id !== undefined) await syncOpvolging(id);
   try {
-    check(await db().from("crm_contacts").update({ ...data, updated_at: new Date().toISOString() }).eq("id", id));
+    let q = db().from("crm_contacts").update({ ...data, updated_at: new Date().toISOString() }).eq("id", id);
+    if (user.rol === "setter" && input.eigenaar_id) q = q.is("eigenaar_id", null); // niet tegelijk door twee setters
+    check(await q);
   } catch (e) {
     throw dupMessage(e);
   }
+  if (input.volgende_opvolging_op !== undefined || input.niet_benaderen !== undefined || input.eigenaar_id !== undefined) await syncOpvolging(id);
   if (input.eigenaar_id !== undefined) {
     await log({ contact_id: id, ...actor(user), type: "eigenaar", van: c.eigenaar_id, naar: input.eigenaar_id || null, tekst: "Eigenaar aangepast (commissie van eerdere boekingen blijft ongewijzigd)" });
   } else if (input.niet_benaderen !== undefined) {
