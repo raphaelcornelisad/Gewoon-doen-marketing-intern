@@ -26,6 +26,9 @@ export default async function Koppelingen({ searchParams }: { searchParams: Prom
     <>
       <CrmBar user={user} actief="/crm/koppelingen" />
       <h1>Koppelingen</h1>
+      {sp.verplicht && mijn?.fout && /verlopen/i.test(mijn.fout) && (
+        <div className="alert"><strong>Je Google-koppeling is verlopen.</strong> Koppel opnieuw om verder te gaan; dat zijn twee klikken.</div>
+      )}
       {sp.verplicht && !mijn && (
         <div className="alert">
           <strong>Koppel eerst je Google Agenda.</strong> Dit is verplicht voordat je het CRM kunt gebruiken: elk terugbelmoment en elke taak die je plant komt dan automatisch met een herinnering in je eigen agenda.

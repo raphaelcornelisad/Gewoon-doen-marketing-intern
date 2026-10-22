@@ -74,7 +74,11 @@ export async function requireCrmUser(): Promise<CrmUser> {
   const u = await getCrmUser();
   if (!u) redirect("/crm/login");
   // Verplicht voor setters: eerst Google Agenda koppelen (de koppelpagina zelf gebruikt getCrmUser).
-  if (u.rol === "setter" && googleAan() && !(await koppeling(u.setter.id))) redirect("/crm/koppelingen?verplicht=1");
+  if (u.rol === "setter" && googleAan()) {
+    const k = await koppeling(u.setter.id);
+    // Geen koppeling, of verlopen (in de testmodus van Google na 7 dagen): eerst (opnieuw) koppelen.
+    if (!k || /verlopen/i.test(k.laatste_fout ?? "")) redirect("/crm/koppelingen?verplicht=1");
+  }
   return u;
 }
 
