@@ -2,7 +2,7 @@
 *::before,
 *::after { box-sizing: border-box; }
 
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; overflow-x: clip; }
 
 body {
   margin: 0;
@@ -11,6 +11,7 @@ body {
   font-family: var(--font-body), system-ui, -apple-system, "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.5;
+  overflow-x: clip;
 }
 
 a { color: var(--primair); }
@@ -601,3 +602,23 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 .crm-koppeling { display: flex; justify-content: space-between; gap: 16px; align-items: center; flex-wrap: wrap; }
 .crm-koppeling h2 { display: flex; gap: 8px; align-items: center; margin-top: 0; }
 .crm-koppeling__knoppen { display: flex; gap: 8px; }
+
+/* Notities: direct leesbaar op het contact. */
+.nt-kaart { display: grid; gap: 10px; border-left: 4px solid var(--primair); }
+.nt-kop { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.nt-kop a { font-size: 14px; font-weight: 700; text-decoration: none; }
+.nt-lijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.nt-item { background: var(--vlak); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; }
+.nt-tekst { margin: 0; white-space: pre-line; overflow-wrap: anywhere; font-size: 16px; line-height: 1.45; }
+.nt-meta { font-size: 13px; color: var(--tekst-zacht); }
+
+/* Telefoon: geen inzoomen bij invoervelden (iOS zoomt onder 16px) en een vaste, rustige actieknoppenrij. */
+@media (max-width: 700px) {
+  input, select, textarea, .crm-form input, .crm-form select, .crm-form textarea, .crm-filters input, .crm-filters select { font-size: 16px !important; }
+  .crm-acties { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .crm-actie { min-width: 0; }
+  .crm-actie { padding: 10px 4px; }
+  .crm-actie span { text-align: center; line-height: 1.2; overflow-wrap: anywhere; font-size: 11.5px; }
+  .crm-lead { min-width: 0; }
+  .crm-sheet__panel { overflow-x: hidden; }
+}

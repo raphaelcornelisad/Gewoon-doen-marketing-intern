@@ -6,6 +6,7 @@ import { useState } from "react";
 import { BelKnop } from "./bel-knop";
 import { BerichtVenster, FaseVenster, InplanVenster, TaakVenster } from "./acties";
 import { Icon, type IconName } from "./icons";
+import { NotitieLijst, type NotitieItem } from "./notities";
 import { post, QuickNote, Sheet } from "./sheet";
 
 type Opp = { id: string; fase: string } | null;
@@ -23,6 +24,7 @@ export function LeadBalk(p: {
   fasesSales: { key: string; label: string }[];
   setters: { id: string; naam: string }[];
   eigenaar: string | null;
+  notities?: NotitieItem[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState<null | "whatsapp" | "sms" | "calendly" | "notitie" | "taak" | "toewijzen" | "fase-outbound" | "fase-sales">(null);
@@ -62,6 +64,12 @@ export function LeadBalk(p: {
       {open === "notitie" && (
         <Sheet titel="Notitie" onClose={sluit}>
           <QuickNote contactId={p.contactId} onDone={() => { sluit(); router.refresh(); }} />
+          {!!p.notities?.length && (
+            <>
+              <strong className="small muted">Eerdere notities ({p.notities.length})</strong>
+              <NotitieLijst items={p.notities} />
+            </>
+          )}
         </Sheet>
       )}
       {open === "taak" && <TaakVenster contactId={p.contactId} onSluit={sluit} />}

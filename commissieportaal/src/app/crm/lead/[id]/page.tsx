@@ -19,6 +19,7 @@ import {
   WaardeField,
 } from "@/components/crm/lead-actions";
 import { BerichtKnop, LeadBalk, TaakKnop } from "@/components/crm/lead-balk";
+import { NotitieLijst, type NotitieItem } from "@/components/crm/notities";
 import { TagEditor } from "@/components/crm/sheet";
 import { acqSetters } from "@/lib/acquisitie/server";
 import { formatEuro } from "@/lib/commission";
@@ -81,7 +82,13 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
   const tagKeuze = [...actieveSetters, ...verkopers.map((v) => ({ id: v.id, naam: `${v.naam} (geen commissie)` }))];
   const k = d.contact;
   const isAdmin = user.rol === "admin";
-  const notities = d.activiteit.filter((a) => a.type === "notitie");
+  // Losse notities én notities die bij een belpoging zijn vastgelegd, nieuwste boven.
+  const notities: NotitieItem[] = [
+    ...d.activiteit.filter((a) => a.type === "notitie" && a.tekst).map((a) => ({ id: a.id, tekst: a.tekst!, wie: regel(a, naam).wie, op: a.created_at, bron: undefined as string | undefined })),
+    ...d.calls.filter((c) => c.notitie).map((c) => ({ id: `call-${c.id}`, tekst: c.notitie!, wie: c.setter_id ? (naam.get(c.setter_id) ?? c.door) : c.door, op: c.gestart_op, bron: c.uitkomst ? `bij gesprek: ${UITKOMST[c.uitkomst] ?? c.uitkomst}` : "bij gesprek" })),
+  ]
+    .sort((a, b) => b.op.localeCompare(a.op))
+    .map(({ op, ...n }) => ({ ...n, wanneer: wanneer(op) }));
   const openTaken = d.taken.filter((x) => !x.gedaan_op).length;
   const toegeschreven = d.afspraken.find((a) => a.type === "kennismaking" && a.status !== "verplaatst");
   const tel = (n: number) => (n ? ` (${n})` : "");
@@ -124,7 +131,16 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
           fasesSales={FASES.sales}
           setters={actieveSetters}
           eigenaar={k.eigenaar_id}
+          notities={notities}
         />
+
+        <section className="card nt-kaart" aria-label="Notities">
+          <div className="nt-kop">
+            <strong>{notities.length ? "Laatste notitie" : "Notities"}</strong>
+            {notities.length > 1 && <Link href="?tab=notities" scroll={false} replace>Alle {notities.length} notities →</Link>}
+          </div>
+          <NotitieLijst items={notities.slice(0, 1)} leeg="Nog geen notities. Tik op Notitie om er een toe te voegen." />
+        </section>
 
         {!d.magOutbound && user.rol === "setter" && <div className="notice">Deze lead is van {k.eigenaar_id ? (naam.get(k.eigenaar_id) ?? "een andere setter") : "een andere setter"}. Je kunt meekijken, maar niet aanpassen.</div>}
 
@@ -334,15 +350,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
         {tab === "notities" && (
           <section className="card crm-form">
             <NoteForm contactId={k.id} />
-            {notities.length === 0 && <p className="muted">Nog geen notities.</p>}
-            <ul className="crm-timeline">
-              {notities.map((a) => (
-                <li key={a.id} className="notitie">
-                  <span className="small muted">{wanneer(a.created_at)} · {regel(a, naam).wie}</span>
-                  <div style={{ whiteSpace: "pre-line" }}>{a.tekst}</div>
-                </li>
-              ))}
-            </ul>
+            <NotitieLijst items={notities} />
           </section>
         )}
 
