@@ -26,6 +26,18 @@ describe("commissiegrootboek", () => {
     expect(sum(rs, "show")).toBe(1000);
   });
 
+  it("show bij Kennismakingsgesprek: €10 voor de setter-tag, op de datum van de kennismaking, blijft staan bij Afgewezen", () => {
+    const deal = { id: "d1", contact_id: "c9", fase: "kennismaking", waarde_cents: null, sluitdatum: null, setter_id: "s1", verschenen_op: "2026-10-20T15:00:00Z" };
+    const afspraak: AfspraakIn = { id: "a9", contact_id: "c9", type: "kennismaking", status: "gepland", start_op: "2026-10-20T08:00:00Z", setter_id: null };
+    const rs = gewenst({ setters: [S], afspraken: [afspraak], deals: [deal], regels: R, vandaag: "2026-10-22" }).filter((r) => r.soort === "show");
+    expect(rs).toHaveLength(1);
+    expect(rs[0]).toMatchObject({ setter_id: "s1", bedrag_cents: 1000, datum: "2026-10-20", appointment_id: "a9" });
+    const later = gewenst({ setters: [S], afspraken: [afspraak], deals: [{ ...deal, fase: "afgewezen" }], regels: R, vandaag: "2026-10-22" }).filter((r) => r.soort === "show");
+    expect(later).toHaveLength(1);
+    // Nog alleen ingepland (niet verschenen): geen show.
+    expect(gewenst({ setters: [S], afspraken: [afspraak], deals: [{ ...deal, fase: "ingepland", verschenen_op: null }], regels: R, vandaag: "2026-10-22" }).filter((r) => r.soort === "show")).toHaveLength(0);
+  });
+
   it("de 30e show activeert precies één bonus van €500; 60 shows nog steeds één", () => {
     const met = (n: number) => gewenst({ setters: [S], regels: R, vandaag: "2026-10-30", deals: [], afspraken: Array.from({ length: n }, (_, i) => show(i)) });
     expect(met(29).filter((r) => r.soort === "bonus")).toHaveLength(0);

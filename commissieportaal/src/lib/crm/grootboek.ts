@@ -41,7 +41,7 @@ export async function herbereken(door = "systeem") {
   const [setters, afspraken, deals, bestaand] = await Promise.all([
     all<SetterIn>((f, t) => db().from("acq_setters").select("id, start_datum, actief, rol").order("id").range(f, t)),
     all<AfspraakIn>((f, t) => db().from("crm_appointments").select("id, contact_id, type, status, start_op, setter_id").order("id").range(f, t)),
-    all<DealIn>((f, t) => db().from("crm_opportunities").select("id, contact_id, fase, waarde_cents, sluitdatum, setter_id").eq("pijplijn", "sales").order("id").range(f, t)),
+    all<DealIn>((f, t) => db().from("crm_opportunities").select("id, contact_id, fase, waarde_cents, sluitdatum, setter_id, verschenen_op").eq("pijplijn", "sales").order("id").range(f, t)),
     all<LedgerRow>((f, t) => db().from("commission_ledger").select(LEDGER_COLS).order("id").range(f, t)),
   ]);
   const vandaag = amsterdamDate(new Date().toISOString());

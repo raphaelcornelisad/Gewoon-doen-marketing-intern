@@ -3,8 +3,9 @@
  *
  * Regels (huidige afspraak, per periode van de 14e tot de 14e, Europe/Amsterdam):
  * - Basisvergoeding per periode.
- * - Showvergoeding: één keer per lead, voor de eerste kennismaking waarop de lead echt verscheen,
- *   toegekend aan de setter die die afspraak heeft ingepland. Verplaatsen of een tweede gesprek telt niet extra.
+ * - Showvergoeding: één keer per lead, zodra de lead echt verscheen: de salesdeal kwam in Kennismakingsgesprek
+ *   (of verder), of de kennismaking is als verschenen geregistreerd. Toegekend aan de setter-tag van de deal
+ *   (anders de setter van de afspraak). Datum = datum van de kennismaking. Verplaatsen of een tweede gesprek telt niet extra.
  * - Bonus: één keer per periode bij minimaal X shows in die periode (bij 2X niet dubbel).
  * - Close: % van de definitieve dealwaarde (excl. btw) bij “Geaccepteerd”, voor de toegeschreven setter.
  *
@@ -44,6 +45,8 @@ export interface DealIn {
   waarde_cents: number | null;
   sluitdatum: string | null;
   setter_id: string | null;
+  /** Eerste moment in Kennismakingsgesprek of verder (lead verschenen) */
+  verschenen_op?: string | null;
 }
 
 export interface Regel {
@@ -88,19 +91,27 @@ export function gewenst(input: { setters: SetterIn[]; afspraken: AfspraakIn[]; d
     }
   }
 
-  // Show: eerste verschenen kennismaking per lead.
-  const eersteShow = new Map<string, AfspraakIn>();
-  for (const a of [...input.afspraken].sort((x, y) => x.start_op.localeCompare(y.start_op))) {
-    if (a.type !== "kennismaking" || a.status !== "verschenen") continue;
-    if (!eersteShow.has(a.contact_id)) eersteShow.set(a.contact_id, a);
+  // Show: per lead één keer, zodra de lead verscheen (afspraak verschenen of deal in Kennismakingsgesprek of verder).
+  const deal = new Map(input.deals.map((d) => [d.contact_id, d]));
+  const kennismakingen = [...input.afspraken].filter((a) => a.type === "kennismaking").sort((x, y) => x.start_op.localeCompare(y.start_op));
+  const eersteShow = new Map<string, { afspraak: AfspraakIn | null; start_op: string; setter_id: string | null }>();
+  for (const a of kennismakingen) {
+    if (a.status !== "verschenen" || eersteShow.has(a.contact_id)) continue;
+    eersteShow.set(a.contact_id, { afspraak: a, start_op: a.start_op, setter_id: deal.get(a.contact_id)?.setter_id ?? a.setter_id });
+  }
+  for (const d of input.deals) {
+    if (!d.verschenen_op || eersteShow.has(d.contact_id)) continue;
+    // Datum van de kennismaking zelf (laatste geplande vóór het verschijnen), anders het moment van de fasewijziging.
+    const a = kennismakingen.filter((x) => x.contact_id === d.contact_id && x.status !== "geannuleerd" && x.status !== "verplaatst" && x.start_op <= d.verschenen_op!).pop() ?? null;
+    eersteShow.set(d.contact_id, { afspraak: a, start_op: a?.start_op ?? d.verschenen_op, setter_id: d.setter_id ?? a?.setter_id ?? null });
   }
   const showsPerPeriode = new Map<string, { datum: string; n: number }[]>();
-  for (const a of eersteShow.values()) {
+  for (const [contactId, a] of eersteShow) {
     const s = a.setter_id ? setters.get(a.setter_id) : null;
     const datum = amsterdamDate(a.start_op);
     if (!s || datum < s.start_datum) continue;
     const p = periodeVan(datum);
-    out.push({ sleutel: `show:${a.contact_id}`, setter_id: s.id, soort: "show", contact_id: a.contact_id, opp_id: null, appointment_id: a.id, periode_start: p, datum, grondslag_cents: null, percentage: null, bedrag_cents: r.showCents, uitleg: `Verschenen bij kennismaking op ${datum}` });
+    out.push({ sleutel: `show:${contactId}`, setter_id: s.id, soort: "show", contact_id: contactId, opp_id: null, appointment_id: a.afspraak?.id ?? null, periode_start: p, datum, grondslag_cents: null, percentage: null, bedrag_cents: r.showCents, uitleg: `Verschenen bij kennismaking op ${datum}` });
     const k = `${s.id}|${p}`;
     showsPerPeriode.set(k, [...(showsPerPeriode.get(k) ?? []), { datum, n: 1 }]);
   }

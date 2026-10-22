@@ -419,11 +419,16 @@ export async function ensureSales(contactId: string, setterId: string | null, do
   return opp;
 }
 
+const VERSCHENEN_FASES = ["kennismaking", "salesgesprek", "offerte", "geaccepteerd"];
+
 /** Fase zetten zonder rechtencontrole (voor systeemprocessen). Logt de wijziging. */
 export async function zetFase(o: Pick<Opp, "id" | "contact_id" | "pijplijn" | "fase">, fase: string, door: string, setterId: string | null, tekst?: string) {
   if (o.fase === fase) return;
   const now = new Date().toISOString();
   check(await db().from("crm_opportunities").update({ fase, fase_sinds: now, updated_at: now }).eq("id", o.id));
+  // Verschenen = de lead kwam (voor het eerst) bij Kennismakingsgesprek of verder; basis voor de showvergoeding.
+  if (o.pijplijn === "sales" && VERSCHENEN_FASES.includes(fase)) check(await db().from("crm_opportunities").update({ verschenen_op: now }).eq("id", o.id).is("verschenen_op", null));
+  if (o.pijplijn === "sales" && fase === "ingepland") check(await db().from("crm_opportunities").update({ verschenen_op: null }).eq("id", o.id));
   await log({ contact_id: o.contact_id, door, setter_id: setterId, type: "fase", pijplijn: o.pijplijn, van: o.fase, naar: fase, tekst: tekst ?? null });
 }
 
