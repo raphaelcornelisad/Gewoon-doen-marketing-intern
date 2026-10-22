@@ -81,7 +81,15 @@ export default async function Agenda({ searchParams }: { searchParams: Promise<R
           {s.calendly_webhook_uri ? " · webhook actief" : " · webhook nog niet aangezet"}
         </span>
       </div>
-      {s.laatste_sync_fout && user.rol === "admin" && <div className="alert"><strong>Synchronisatiefout</strong><span className="small">{s.laatste_sync_fout}</span></div>}
+      {s.laatste_sync_fout && user.rol === "admin" && (
+        <div className="alert">
+          <strong>Calendly kan geen afspraken lezen</strong>
+          {/scope|403|401/i.test(s.laatste_sync_fout) ? (
+            <span className="small">De Calendly-token in Vercel (CALENDLY_TOKEN) mist rechten. Maak in Calendly (Integraties → API en webhooks) een nieuwe persoonlijke token met alle rechten, vervang CALENDLY_TOKEN in Vercel en redeploy. Daarna komen boekingen binnen 5 minuten vanzelf binnen.</span>
+          ) : null}
+          <span className="small muted">{s.laatste_sync_fout}</span>
+        </div>
+      )}
       {googleFouten.map((x) => <div key={x.id} className="alert"><span className="small">Google Agenda van {naam.get(x.id) ?? "setter"}: {x.fout}</span></div>)}
       {!!mislukt.count && <div className="alert"><span className="small">{mislukt.count} Calendly-meldingen konden niet worden verwerkt. Zie Instellingen → Mislukte synchronisaties.</span></div>}
       <form className="crm-filters" method="get">
