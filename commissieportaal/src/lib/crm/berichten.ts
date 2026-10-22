@@ -1,5 +1,4 @@
 import "server-only";
-import { after } from "next/server";
 import { env } from "../env";
 import { db } from "../supabase/server";
 import { normPhone, vulTemplate } from "./core";
@@ -129,7 +128,7 @@ export async function inkomend(o: { sid: string; van: string; tekst: string; kan
   if (isAfmelding(o.tekst)) {
     check(await db().from("crm_consents").insert({ contact_id: c.id, kanaal: o.kanaal, status: "ingetrokken", bron: `Afmelding per ${o.kanaal}: "${o.tekst.trim().slice(0, 50)}"`, vastgelegd_door: "systeem" }));
     check(await db().from("crm_contacts").update({ niet_benaderen: true, niet_benaderen_reden: `Afgemeld via ${o.kanaal}`, volgende_opvolging_op: null }).eq("id", c.id));
-    after(() => syncOpvolging(c.id));
+    await syncOpvolging(c.id);
     const ob = check(await db().from("crm_opportunities").select(OPP_COLS).eq("contact_id", c.id).eq("pijplijn", "outbound").maybeSingle()) as Opp | null;
     if (ob && ob.fase !== "ingepland") await zetFase(ob, "niet_benaderen", "systeem", null, "Afgemeld per bericht");
     await log({ contact_id: c.id, door: "systeem", type: "toestemming", tekst: `Afgemeld via ${o.kanaal}; geplande opvolging gestopt` });
@@ -137,7 +136,7 @@ export async function inkomend(o: { sid: string; van: string; tekst: string; kan
   }
   // Reactie: geplande opvolging stoppen en een taak voor de verantwoordelijke maken.
   check(await db().from("crm_contacts").update({ volgende_opvolging_op: null }).eq("id", c.id));
-  after(() => syncOpvolging(c.id));
+  await syncOpvolging(c.id);
   check(await db().from("crm_tasks").insert({ contact_id: c.id, toegewezen_aan: c.eigenaar_id, titel: `Reageren op ${o.kanaal === "whatsapp" ? "WhatsApp" : "sms"} van ${c.salon_naam}`, vervalt_op: new Date().toISOString(), door: "systeem" }));
   await log({ contact_id: c.id, door: "lead", type: "bericht", tekst: `Inkomend ${o.kanaal === "whatsapp" ? "WhatsApp-bericht" : "sms"}: ${o.tekst.slice(0, 200)}` });
 }

@@ -1,5 +1,4 @@
 import "server-only";
-import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { acqSetters, type AcqSetter } from "../acquisitie/server";
 import { getAcqSetter } from "../auth/acq-session";
@@ -448,7 +447,7 @@ export async function moveOpp(user: CrmUser, oppId: string, fase: string, extra:
     if (user.setter) await wijsToe(o.contact, user.setter.id, user.email);
     if (fase === "niet_benaderen") {
       check(await db().from("crm_contacts").update({ niet_benaderen: true, niet_benaderen_reden: "Fase Niet meer benaderen", volgende_opvolging_op: null }).eq("id", o.contact_id));
-      after(() => syncOpvolging(o.contact_id));
+      await syncOpvolging(o.contact_id);
     }
   }
 
@@ -605,7 +604,7 @@ export async function updateContact(user: CrmUser, id: string, input: ContactInp
     data.eigenaar_id = input.eigenaar_id || null;
     if (input.eigenaar_id && !c.oorspronkelijke_setter_id) data.oorspronkelijke_setter_id = input.eigenaar_id;
   }
-  if (input.volgende_opvolging_op !== undefined || input.niet_benaderen !== undefined || input.eigenaar_id !== undefined) after(() => syncOpvolging(id));
+  if (input.volgende_opvolging_op !== undefined || input.niet_benaderen !== undefined || input.eigenaar_id !== undefined) await syncOpvolging(id);
   try {
     check(await db().from("crm_contacts").update({ ...data, updated_at: new Date().toISOString() }).eq("id", id));
   } catch (e) {
@@ -661,7 +660,7 @@ export async function completeTask(user: CrmUser, taskId: string, gedaan: boolea
   if (!t) throw new CrmError("Onbekende taak.", 404);
   if (user.rol !== "admin" && t.toegewezen_aan && t.toegewezen_aan !== user.setter.id) throw new CrmError("Deze taak is van iemand anders.", 403);
   check(await db().from("crm_tasks").update({ gedaan_op: gedaan ? new Date().toISOString() : null }).eq("id", t.id));
-  after(() => syncTaak(t.id));
+  await syncTaak(t.id);
   await log({ contact_id: t.contact_id, ...actor(user), type: "taak", tekst: `${gedaan ? "Afgerond" : "Heropend"}: ${t.titel}` });
 }
 
