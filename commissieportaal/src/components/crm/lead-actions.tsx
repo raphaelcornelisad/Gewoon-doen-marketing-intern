@@ -149,7 +149,7 @@ export function ImportForm() {
             <span className="small">
               Per fase:{" "}
               {Object.entries(res.perFase)
-                .map(([f, n]) => `${({ nieuw: "Nieuw", wafu: "WAFU", terugbellen: "Terugbellen", niet_geinteresseerd: "Niet geïnteresseerd", ongeldig_nummer: "Ongeldig nummer", ingepland: "Ingepland (ook in Call geboekt)", niet_benaderen: "Niet meer benaderen" } as Record<string, string>)[f] ?? f} ${n}`)
+                .map(([f, n]) => `${({ nieuw: "Nieuw", wafu: "WAFU", terugbellen: "Terugbellen", niet_geinteresseerd: "Niet geïnteresseerd \"1\"", niet_geinteresseerd_2: "Niet geïnteresseerd \"2\"", niet_geinteresseerd_fuig: "Niet geïnteresseerd \"FU-IG\"", ongeldig_nummer: "Ongeldig nummer", ingepland: "Ingepland (ook in Call geboekt)", niet_benaderen: "Niet meer benaderen" } as Record<string, string>)[f] ?? f} ${n}`)
                 .join(" · ")}
             </span>
           )}
