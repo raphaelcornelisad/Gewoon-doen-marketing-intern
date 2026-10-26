@@ -36,6 +36,7 @@ export type CrmSoort = "standaard" | "leadmagnet";
 const LEADMAGNET: { key: string; label: string }[] = [
   { key: "nieuw", label: "Leadlijst" },
   { key: "wafu", label: "WAFU" },
+  { key: "niet_opgenomen", label: "Geen gehoor" },
   { key: "video_toegestuurd", label: "Video toegestuurd" },
   { key: "ingepland", label: "Ingepland" },
   { key: "niet_geinteresseerd", label: "Geen interesse" },
