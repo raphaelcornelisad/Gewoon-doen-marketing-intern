@@ -437,7 +437,7 @@ export async function zetAfspraakStatus(user: CrmUser, apptId: string, status: "
   const a = check(await db().from("crm_appointments").select("id, contact_id, type, status").eq("id", apptId).maybeSingle()) as Afspraak | null;
   if (!a) throw new CrmError("Onbekende afspraak.", 404);
   const sales = check(await db().from("crm_opportunities").select(OPP_COLS).eq("contact_id", a.contact_id).eq("pijplijn", "sales").maybeSingle()) as Opp | null;
-  if (!(user.rol === "admin" || (sales && user.rol === "sales" && magSales(sales, user)))) throw new CrmError("Alleen de admin of de salesmedewerker registreert of iemand verschenen is.", 403);
+  if (!(user.rol === "admin" || (sales && magSales(sales, user)))) throw new CrmError("Alleen de admin, de salesmedewerker of de setter van deze lead registreert of iemand verschenen is.", 403);
   if (a.status === "geannuleerd" || a.status === "verplaatst") throw new CrmError("Deze afspraak is geannuleerd of verplaatst.");
   check(await db().from("crm_appointments").update({ status, status_door: user.email, updated_at: new Date().toISOString() }).eq("id", a.id));
   await log({ contact_id: a.contact_id, ...actor(user), type: "afspraak", pijplijn: "sales", van: a.status, naar: status, tekst: `${a.type === "kennismaking" ? "Kennismaking" : "Salesgesprek"}: ${status === "verschenen" ? "verschenen" : status === "no_show" ? "no-show" : "terug naar gepland"}` });

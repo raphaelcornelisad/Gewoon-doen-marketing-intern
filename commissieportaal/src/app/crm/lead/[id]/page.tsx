@@ -156,7 +156,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
           <>
             <div className="crm-details">
               <strong>Koude acquisitie</strong>
-              {d.outbound && <StatusSelect oppId={d.outbound.id} fase={d.outbound.fase} fases={FASES.outbound.filter((f) => isAdmin || f.key !== "ingepland" || d.outbound!.fase === "ingepland")} disabled={!d.magOutbound} />}
+              {d.outbound && <StatusSelect oppId={d.outbound.id} fase={d.outbound.fase} fases={FASES.outbound} disabled={!d.magOutbound} />}
               {isAdmin ? (
                 <OwnerField contactId={k.id} value={k.eigenaar_id ?? ""} setters={actieveSetters} label="Huidige verantwoordelijke" soort="eigenaar" />
               ) : (
@@ -324,7 +324,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
                   {a.vorige_afspraak_id && " · verplaatste afspraak"}
                   {a.status_door && ` · status door ${a.status_door}`}
                 </span>
-                {(isAdmin || d.magSales) && user.rol !== "setter" && <AfspraakKnoppen id={a.id} status={a.status} />}
+                {(isAdmin || d.magSales) && <AfspraakKnoppen id={a.id} status={a.status} />}
               </article>
             ))}
           </section>

@@ -178,9 +178,9 @@ export function magOutbound(c: Pick<Contact, "eigenaar_id">, u: CrmUser) {
   return u.rol === "admin" || (u.rol === "setter" && (!c.eigenaar_id || c.eigenaar_id === u.setter.id));
 }
 
-/** Sales bewerken: admin, of de toegewezen salesmedewerker. */
-export function magSales(o: Pick<Opp, "verkoper_id">, u: CrmUser) {
-  return u.rol === "admin" || (u.rol === "sales" && o.verkoper_id === u.setter.id);
+/** Sales bewerken: admin, de toegewezen salesmedewerker, of de setter die de lead heeft ingepland (setter-tag). */
+export function magSales(o: Pick<Opp, "verkoper_id" | "setter_id">, u: CrmUser) {
+  return u.rol === "admin" || (u.rol === "sales" && o.verkoper_id === u.setter.id) || (u.rol === "setter" && o.setter_id === u.setter.id);
 }
 
 /** Lead zien: admin; setter (belpool + eigen + door haar ingepland); sales (toegewezen salesleads). */
@@ -448,7 +448,6 @@ export async function moveOpp(user: CrmUser, oppId: string, fase: string, extra:
   if (o.fase === fase && !Object.keys(extra).length) return o;
 
   if (o.pijplijn === "outbound") {
-    if (fase === "ingepland" && user.rol !== "admin") throw new CrmError("Inplannen gaat via de knop Inplannen (Calendly). De lead schuift door zodra de boeking bevestigd is.");
     if (user.setter) await wijsToe(o.contact, user.setter.id, user.email);
     if (fase === "niet_benaderen") {
       check(await db().from("crm_contacts").update({ niet_benaderen: true, niet_benaderen_reden: "Fase Niet meer benaderen", volgende_opvolging_op: null }).eq("id", o.contact_id));

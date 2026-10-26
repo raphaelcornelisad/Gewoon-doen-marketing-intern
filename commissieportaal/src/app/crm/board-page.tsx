@@ -119,7 +119,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       notities: notities.get(k.id)?.aantal ?? 0,
       laatsteNotitie: notities.get(k.id)?.laatste ?? null,
       taken: taken.get(k.id) ?? 0,
-      vergrendeld: pijplijn === "sales" ? !(user.rol === "admin" || (user.rol === "sales" && c.verkoper_id === user.setter.id)) : !(user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id))),
+      vergrendeld: pijplijn === "sales" ? !(user.rol === "admin" || (user.rol === "sales" && c.verkoper_id === user.setter.id) || (user.rol === "setter" && c.setter_id === user.setter.id)) : !(user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id))),
       bewerkbaar: user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id)),
     };
   });
