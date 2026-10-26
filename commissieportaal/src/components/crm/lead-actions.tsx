@@ -109,17 +109,27 @@ export function NoteForm({ contactId }: { contactId: string }) {
   );
 }
 
-export function ImportForm() {
+export function ImportForm({ crms, standaard }: { crms: { id: string; naam: string }[]; standaard: string }) {
   const a = useAction();
   const [url, setUrl] = useState("");
+  const [crmId, setCrmId] = useState(standaard);
   const [res, setRes] = useState<null | { toegevoegd: number; bestaand: number; dubbel: number; twijfel: number; zonderTelefoon: number; zonderProvincie: number; perFase?: Record<string, number>; overgeslagen: { tab: string; reden: string }[] }>(null);
   async function stuur(body: Record<string, unknown>) {
     setRes(null);
-    const r = await a.run("/api/crm/import", body, "Geïmporteerd.");
+    const r = await a.run("/api/crm/import", { ...body, crmId }, `Geïmporteerd in ${crms.find((c) => c.id === crmId)?.naam ?? "het CRM"}.`);
     if (r.ok) setRes(r.data);
   }
   return (
     <div className="crm-form">
+      <div className="crm-form card">
+        <label>
+          In welk CRM komen de leads?
+          <select value={crmId} onChange={(e) => setCrmId(e.target.value)} disabled={a.busy}>
+            {crms.map((c) => <option key={c.id} value={c.id}>{c.naam}</option>)}
+          </select>
+        </label>
+        <span className="small muted">Nieuwe leads komen in CRM Outbound van dit CRM. Dubbelen worden binnen dit CRM gecontroleerd.</span>
+      </div>
       <form className="crm-form card" onSubmit={(e) => { e.preventDefault(); void stuur({ url }); }}>
         <label>Google Sheet-link<input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/…" required /></label>
         <button type="submit" className="button button--small" disabled={a.busy}>{a.busy ? "Inlezen…" : "Sheet importeren"}</button>

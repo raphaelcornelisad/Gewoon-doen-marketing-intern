@@ -28,7 +28,7 @@ import {
 import { googleAan, koppeling, syncOpvolging, syncTaak } from "./google";
 import { herbereken } from "./grootboek";
 import { provincieVoor } from "./provincies";
-import { huidigeCrmId } from "./werkruimte";
+import { huidigeCrmId, werkruimtes } from "./werkruimte";
 
 export function check<T>(r: { data: T; error: { message: string } | null }): T {
   if (r.error) throw new Error(r.error.message);
@@ -683,7 +683,7 @@ export async function addConsent(user: CrmUser, contactId: string, kanaal: strin
 // ---------- Import ----------
 
 /** Importeert leads (Google Sheet-link of CSV-tekst). Bestaande leads worden overgeslagen; twijfelgevallen komen in Beoordelen. */
-export async function importLeads(user: CrmUser, bron: { url?: string; csv?: string; bestandsnaam?: string }) {
+export async function importLeads(user: CrmUser, bron: { url?: string; csv?: string; bestandsnaam?: string; crmId?: string }) {
   if (user.rol !== "admin") throw new CrmError("Alleen de admin importeert.", 403);
   let leads: ImportLead[];
   let overgeslagen: { tab: string; reden: string }[] = [];
@@ -704,7 +704,8 @@ export async function importLeads(user: CrmUser, bron: { url?: string; csv?: str
     bronNaam = "sheet";
   }
   const { uniek, dubbel } = dedupeLeads(leads);
-  const crm = await huidigeCrmId();
+  const crm = bron.crmId ? (await werkruimtes()).find((w) => w.id === bron.crmId)?.id : await huidigeCrmId();
+  if (!crm) throw new CrmError("Onbekend CRM gekozen.");
 
   const bestaande = await all<{ id: string; salon_naam: string; stad: string | null; telefoon_norm: string | null; email: string | null; domein: string | null }>((f, t) =>
     db().from("crm_contacts").select("id, salon_naam, stad, telefoon_norm, email, domein").eq("crm_id", crm).order("id").range(f, t),
