@@ -4,7 +4,7 @@ import { CrmBar } from "@/components/crm/crm-bar";
 import { Filters } from "@/components/crm/filters";
 import { acqSetters } from "@/lib/acquisitie/server";
 import { formatEuro } from "@/lib/commission";
-import { FASES, faseLabel, type Pijplijn } from "@/lib/crm/core";
+import { faseLabel, fasesVoor, type Pijplijn } from "@/lib/crm/core";
 import { all, filterCards, filterOptions, loadCards, requireCrmUser, views, type BoardFilter, type Card } from "@/lib/crm/server";
 import { huidigeWerkruimte } from "@/lib/crm/werkruimte";
 import { db } from "@/lib/supabase/server";
@@ -123,13 +123,14 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       bewerkbaar: user.rol === "admin" || (user.rol === "setter" && (!k.eigenaar_id || k.eigenaar_id === user.setter.id)),
     };
   });
+  const crm = await huidigeWerkruimte();
+  const fases = fasesVoor(pijplijn, crm.soort);
   const waardes = Object.fromEntries(
-    FASES[pijplijn].map((x) => {
+    fases.map((x) => {
       const sum = cards.filter((c) => c.fase === x.key).reduce((s, c) => s + (c.waarde_cents ?? 0), 0);
       return [x.key, sum ? formatEuro(sum) : ""];
     }),
   );
-  const crm = await huidigeWerkruimte();
   const titel = pijplijn === "outbound" ? crm.naam : `${user.rol === "admin" ? "Call geboekt" : "Mijn geboekte calls"} · ${crm.naam}`;
 
   return (
@@ -155,7 +156,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       <p className="small muted">{cards.length} van {alle.length} leads</p>
       {gesprekken ? (
         <div className="crm-form">
-          {FASES[pijplijn].map((f) => {
+          {fases.map((f) => {
             const rijen = cards.filter((c) => c.fase === f.key && berichten.has(c.contact_id)).sort((a, b) => berichten.get(b.contact_id)!.laatste.created_at.localeCompare(berichten.get(a.contact_id)!.laatste.created_at));
             if (!rijen.length) return null;
             return (
@@ -204,7 +205,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
                 <tr key={c.id}>
                   <td><Link href={`/crm/lead/${c.contactId}`}>{c.salon}</Link></td>
                   <td>{c.sub}</td>
-                  <td>{faseLabel(pijplijn, c.fase)}</td>
+                  <td>{fases.find((x) => x.key === c.fase)?.label ?? faseLabel(pijplijn, c.fase)}</td>
                   <td>{c.wie?.naam ?? <span className="muted">–</span>}</td>
                   <td className="small">{c.afspraak ?? "–"}</td>
                   <td className="num">{c.belpogingen}</td>
@@ -219,7 +220,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       ) : (
         <Board
           pijplijn={pijplijn}
-          fases={FASES[pijplijn].filter((f) => f.key !== "klant")}
+          fases={fases.filter((f) => f.key !== "klant")}
           cards={board}
           waardes={waardes}
           alleTags={opties.tags}

@@ -8,11 +8,12 @@ export const CRM_COOKIE = "gdm_crm";
 export interface Werkruimte {
   id: string;
   naam: string;
+  soort: "standaard" | "leadmagnet";
 }
 
 /** Alle CRM's, oudste eerst (het eerste is de standaard). */
 export const werkruimtes = cache(async (): Promise<Werkruimte[]> => {
-  const { data, error } = await db().from("crm_werkruimtes").select("id, naam").order("created_at").order("naam");
+  const { data, error } = await db().from("crm_werkruimtes").select("id, naam, soort").order("created_at").order("naam");
   if (error) throw new Error(error.message);
   return (data ?? []) as Werkruimte[];
 });

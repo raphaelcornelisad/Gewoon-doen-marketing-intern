@@ -13,6 +13,7 @@ import {
   domeinVan,
   faseUitStatus,
   FASES,
+  fasesVoor,
   faseLabel,
   isFase,
   naamSleutel,
@@ -28,7 +29,7 @@ import {
 import { googleAan, koppeling, syncOpvolging, syncTaak } from "./google";
 import { herbereken } from "./grootboek";
 import { provincieVoor } from "./provincies";
-import { huidigeCrmId, werkruimtes } from "./werkruimte";
+import { huidigeCrmId, huidigeWerkruimte, werkruimtes } from "./werkruimte";
 
 export function check<T>(r: { data: T; error: { message: string } | null }): T {
   if (r.error) throw new Error(r.error.message);
@@ -96,6 +97,7 @@ export const isAdmin = (u: CrmUser) => u.rol === "admin";
 
 export interface Contact {
   id: string;
+  crm_id: string;
   salon_naam: string;
   contactpersoon: string | null;
   telefoon: string | null;
@@ -157,7 +159,7 @@ export interface Activity {
 }
 
 export const CONTACT_COLS =
-  "id, salon_naam, contactpersoon, telefoon, telefoon_norm, email, website, domein, adres, postcode, stad, provincie, type_bedrijf, behandelingen, tags, bron, bron_url, eigenaar_id, oorspronkelijke_setter_id, laatste_contact_op, volgende_opvolging_op, belpogingen, niet_benaderen, niet_benaderen_reden, gereserveerd_door, gereserveerd_tot, created_at, updated_at";
+  "id, crm_id, salon_naam, contactpersoon, telefoon, telefoon_norm, email, website, domein, adres, postcode, stad, provincie, type_bedrijf, behandelingen, tags, bron, bron_url, eigenaar_id, oorspronkelijke_setter_id, laatste_contact_op, volgende_opvolging_op, belpogingen, niet_benaderen, niet_benaderen_reden, gereserveerd_door, gereserveerd_tot, created_at, updated_at";
 export const OPP_COLS = "id, contact_id, pijplijn, fase, waarde_cents, setter_id, verkoper_id, offerte_op, offerte_cents, sluitdatum, fase_sinds, updated_at";
 
 export async function log(a: { contact_id: string; door: string; type: string } & Partial<Omit<Activity, "id" | "created_at">>) {
@@ -894,9 +896,9 @@ export async function stats(start: string, eind: string, user: CrmUser) {
   const pijplijn = {} as Record<Pijplijn, { fase: string; label: string; aantal: number; waardeCents: number }[]>;
   for (const p of ["outbound", "sales"] as Pijplijn[]) {
     const opps = (await loadCards(p, user)).filter((c) => p === "sales" || user.rol === "admin" || c.contact.eigenaar_id === user.setter?.id);
-    pijplijn[p] = FASES[p].map((f) => ({
+    pijplijn[p] = fasesVoor(p, (await huidigeWerkruimte()).soort).map((f) => ({
       fase: f.key,
-      label: faseLabel(p, f.key),
+      label: f.label,
       aantal: opps.filter((o) => o.fase === f.key).length,
       waardeCents: opps.filter((o) => o.fase === f.key).reduce((s, o) => s + (o.waarde_cents ?? 0), 0),
     }));

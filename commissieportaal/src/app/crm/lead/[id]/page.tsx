@@ -23,7 +23,8 @@ import { NotitieLijst, type NotitieItem } from "@/components/crm/notities";
 import { TagEditor } from "@/components/crm/sheet";
 import { acqSetters } from "@/lib/acquisitie/server";
 import { formatEuro } from "@/lib/commission";
-import { FASES, faseLabel, type Pijplijn } from "@/lib/crm/core";
+import { FASES, faseLabel, fasesVoor, type Pijplijn } from "@/lib/crm/core";
+import { werkruimtes } from "@/lib/crm/werkruimte";
 import { PROVINCIES } from "@/lib/crm/provincies";
 import { allTags, contactDetail, requireCrmUser, type Activity } from "@/lib/crm/server";
 import { afspraakTekst, wanneer } from "../../format";
@@ -81,6 +82,8 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
   const verkopers = setters.filter((s) => s.actief && s.rol === "sales").map((s) => ({ id: s.id, naam: s.naam }));
   const tagKeuze = [...actieveSetters, ...verkopers.map((v) => ({ id: v.id, naam: `${v.naam} (geen commissie)` }))];
   const k = d.contact;
+  const fasesOutbound = fasesVoor("outbound", (await werkruimtes()).find((w) => w.id === k.crm_id)?.soort);
+  const outboundLabel = (f: string) => fasesOutbound.find((x) => x.key === f)?.label ?? faseLabel("outbound", f);
   const isAdmin = user.rol === "admin";
   // Losse notities én notities die bij een belpoging zijn vastgelegd, nieuwste boven.
   const notities: NotitieItem[] = [
@@ -111,7 +114,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
             {k.email && <span><Icon name="mail" size={18} /> {k.email}</span>}
             <span className="crm-chips">
               <span className={`crm-label${k.eigenaar_id ? "" : " crm-label--leeg"}`}>{k.eigenaar_id ? `Eigenaar: ${naam.get(k.eigenaar_id) ?? "?"}` : "Niet toegewezen"}</span>
-              {d.outbound && <span className="crm-chip">{faseLabel("outbound", d.outbound.fase)}</span>}
+              {d.outbound && <span className="crm-chip">{outboundLabel(d.outbound.fase)}</span>}
               {d.sales && <span className="crm-chip crm-chip--tag">Call geboekt: {faseLabel("sales", d.sales.fase)}</span>}
               {k.tags.map((x) => <span key={x} className="crm-chip crm-chip--tag">{x}</span>)}
             </span>
@@ -127,7 +130,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
           sales={d.sales ? { id: d.sales.id, fase: d.sales.fase } : null}
           magOutbound={d.magOutbound}
           magSales={d.magSales}
-          fasesOutbound={FASES.outbound}
+          fasesOutbound={fasesOutbound}
           fasesSales={FASES.sales}
           setters={actieveSetters}
           eigenaar={k.eigenaar_id}
@@ -156,7 +159,7 @@ export default async function Lead({ params, searchParams }: { params: Promise<{
           <>
             <div className="crm-details">
               <strong>Koude acquisitie</strong>
-              {d.outbound && <StatusSelect oppId={d.outbound.id} fase={d.outbound.fase} fases={FASES.outbound} disabled={!d.magOutbound} />}
+              {d.outbound && <StatusSelect oppId={d.outbound.id} fase={d.outbound.fase} fases={fasesOutbound} disabled={!d.magOutbound} />}
               {isAdmin ? (
                 <OwnerField contactId={k.id} value={k.eigenaar_id ?? ""} setters={actieveSetters} label="Huidige verantwoordelijke" soort="eigenaar" />
               ) : (
