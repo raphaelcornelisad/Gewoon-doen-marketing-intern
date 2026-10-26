@@ -10,6 +10,7 @@ export const FASES: Record<Pijplijn, { key: string; label: string }[]> = {
     { key: "niet_opgenomen", label: "Gebeld – niet opgenomen" },
     { key: "wafu", label: "WAFU" },
     { key: "video_toegestuurd", label: "Video toegestuurd" },
+    { key: "niet_bruikbaar", label: "Niet bruikbaar" },
     { key: "terugbellen", label: "Terugbellen" },
     { key: "ingepland", label: "Ingepland – naar sales" },
     { key: "klant", label: "Klant geworden" },
@@ -40,12 +41,13 @@ const LEADMAGNET: { key: string; label: string }[] = [
   { key: "video_toegestuurd", label: "Video toegestuurd" },
   { key: "ingepland", label: "Ingepland" },
   { key: "niet_geinteresseerd", label: "Geen interesse" },
+  { key: "niet_bruikbaar", label: "Niet bruikbaar" },
 ];
 
 /** Kolommen van een pijplijn voor een bepaald soort CRM. */
 export function fasesVoor(p: Pijplijn, soort: CrmSoort = "standaard") {
   if (p === "sales") return FASES.sales;
-  return soort === "leadmagnet" ? LEADMAGNET : FASES.outbound.filter((f) => f.key !== "video_toegestuurd");
+  return soort === "leadmagnet" ? LEADMAGNET : FASES.outbound.filter((f) => f.key !== "video_toegestuurd" && f.key !== "niet_bruikbaar");
 }
 
 /** Fases waarin een lead nog in de belwachtrij hoort. */
