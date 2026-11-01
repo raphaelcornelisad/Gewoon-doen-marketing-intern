@@ -73,7 +73,7 @@ async function InstagramInbox({ id }: { id?: string }) {
         <WaLijst
           gesprekken={gesprekken}
           actief={t?.id ?? null}
-          href={(x) => `/crm/inbox?kanaal=instagram&ig=${x}`}
+          basis="/crm/inbox?kanaal=instagram&ig="
           leeg="Nog geen Instagram-gesprekken gesynchroniseerd."
           openLabel="Wacht op ons"
         />

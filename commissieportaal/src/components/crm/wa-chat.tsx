@@ -33,14 +33,14 @@ export function Vinkjes({ status }: { status: string }) {
 export function WaLijst({
   gesprekken,
   actief,
-  href = (id) => `/crm/inbox?lead=${id}`,
+  basis = "/crm/inbox?lead=",
   leeg = "Nog geen gesprekken. Open een lead en stuur een bericht om te beginnen.",
   openLabel = "Ongelezen",
 }: {
   gesprekken: WaGesprek[];
   actief: string | null;
-  /** Link per chat; standaard de WhatsApp-chat van een lead. */
-  href?: (id: string) => string;
+  /** Begin van de link per chat (gevolgd door het id); standaard de WhatsApp-chat van een lead. */
+  basis?: string;
   leeg?: string;
   /** Label van het filter op chats met een teller. */
   openLabel?: string;
@@ -61,7 +61,7 @@ export function WaLijst({
       <div className="wa-chats">
         {lijst.length === 0 && <p className="wa-leeg">{gesprekken.length ? "Geen chats gevonden." : leeg}</p>}
         {lijst.map((g) => (
-          <Link key={g.id} href={href(g.id)} className={`wa-chat${actief === g.id ? " is-actief" : ""}`} aria-current={actief === g.id ? "page" : undefined}>
+          <Link key={g.id} href={`${basis}${g.id}`} className={`wa-chat${actief === g.id ? " is-actief" : ""}`} aria-current={actief === g.id ? "page" : undefined}>
             <span className="wa-avatar" style={{ background: avatarKleur(g.id) }}>{initialen(g.naam)}</span>
             <span className="wa-chat__midden">
               <span className="wa-chat__rij">
