@@ -377,6 +377,7 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
 .crm-statuslijst { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .crm-chip--ok { background: #E3F3E7; border-color: #BFE3C8; color: #1E6B34; }
 .crm-chip--wacht { background: #FEF4D6; border-color: #F3DFA2; color: #8A5A00; }
+.crm-chip--rood { background: #FCE4E2; border-color: #F5BDB7; color: #A1251B; }
 .crm-tegels { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .crm-tegel { display: grid; gap: 4px; text-decoration: none; color: var(--tekst); }
 a.crm-tegel:hover { border-color: var(--primair); }

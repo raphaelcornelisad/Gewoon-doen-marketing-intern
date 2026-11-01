@@ -81,3 +81,134 @@ describe("migratie 0001_init", () => {
     ]);
   });
 });
+
+describe("migratie 0021_instagram", () => {
+  let db: PGlite;
+  const dir = path.join(__dirname, "..", "supabase", "migrations");
+  const IG = ["ig_accounts", "ig_threads", "ig_messages", "ig_daily_metrics", "ig_sync_runs"];
+  const sync = async (p: unknown) => (await db.query<{ r: Record<string, unknown> }>(`select ig_sync($1::jsonb) as r`, [JSON.stringify(p)])).rows[0].r;
+  const thread = async (conv: string) =>
+    (await db.query<Record<string, unknown>>(`select * from ig_threads where ig_conversation_id = $1`, [conv])).rows[0];
+
+  // Verzonnen testdata; geen echte gesprekken of gebruikersnamen.
+  const account = { ig_user_id: "test-account-1", gebruikersnaam: "test.account" };
+  const batch = (fase?: string) => ({
+    account,
+    threads: [
+      {
+        ig_conversation_id: "conv-a",
+        lead_ig_id: "lead-1",
+        lead_gebruikersnaam: "salon.verzonnen",
+        gestart_door: "wij",
+        ...(fase ? { fase, fase_bron: "script" } : {}),
+        messages: [
+          { ig_message_id: "m1", van: "wij", verzonden_op: "2026-10-30T09:00:00Z", tekst: "Hoi! Opener." },
+          { ig_message_id: "m2", van: "lead", verzonden_op: "2026-10-30T10:00:00Z", tekst: "Afwezig tot maandag", is_autoreply: true },
+          { ig_message_id: "m3", van: "lead", verzonden_op: "2026-10-30T11:00:00Z", tekst: "Vertel eens meer" },
+        ],
+      },
+    ],
+    metrics: [{ rapportdag: "2026-10-31", nieuwe_gesprekken: 3, signaal_sterk: null }],
+  });
+
+  beforeAll(async () => {
+    db = new PGlite({ extensions: { citext } });
+    await db.exec(ROLES);
+    // Zoals Supabase: service_role omzeilt RLS, en standaardrechten voor anon/authenticated op nieuwe tabellen en functies.
+    await db.exec(`alter role service_role bypassrls;
+      alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+      alter default privileges in schema public grant all on functions to anon, authenticated, service_role;
+      grant usage on schema public to anon, authenticated, service_role;`);
+    for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".sql")).sort()) await db.exec(fs.readFileSync(path.join(dir, f), "utf8"));
+  });
+
+  it("maakt de vijf ig_-tabellen met RLS aan en zonder policies", async () => {
+    const r = await db.query<{ relname: string; relrowsecurity: boolean }>(
+      `select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname like 'ig\\_%'`,
+    );
+    expect(r.rows.map((x) => x.relname).sort()).toEqual([...IG].sort());
+    expect(r.rows.every((x) => x.relrowsecurity)).toBe(true);
+    const p = await db.query(`select * from pg_policies where tablename like 'ig\\_%'`);
+    expect(p.rows).toHaveLength(0);
+  });
+
+  it("laat anon en authenticated niets lezen of de sync aanroepen", async () => {
+    await sync(batch());
+    for (const rol of ["anon", "authenticated"]) {
+      for (const t of IG) {
+        await db.exec(`set role ${rol}`);
+        try {
+          await expect(db.query(`select * from ${t}`)).rejects.toThrow(/permission denied/);
+        } finally {
+          await db.exec(`reset role`);
+        }
+      }
+      await db.exec(`set role ${rol}`);
+      try {
+        await expect(db.query(`select ig_sync('{}'::jsonb)`)).rejects.toThrow(/permission denied/);
+      } finally {
+        await db.exec(`reset role`);
+      }
+    }
+  });
+
+  it("laat service_role wel lezen", async () => {
+    await db.exec(`set role service_role`);
+    try {
+      const r = await db.query(`select id from ig_threads`);
+      expect(r.rows.length).toBeGreaterThan(0);
+    } finally {
+      await db.exec(`reset role`);
+    }
+  });
+
+  it("controleert de fase en fase_bron", async () => {
+    const acc = (await db.query<{ id: string }>(`select id from ig_accounts limit 1`)).rows[0].id;
+    await expect(db.query(`insert into ig_threads (account_id, ig_conversation_id, fase) values ($1, 'x1', 'nieuw')`, [acc])).rejects.toThrow(/check/);
+    await expect(db.query(`insert into ig_threads (account_id, ig_conversation_id, fase_bron) values ($1, 'x2', 'gok')`, [acc])).rejects.toThrow(/check/);
+    for (const f of ["opener_gestuurd", "in_gesprek", "video_gestuurd", "bookinglink_gestuurd", "call_geboekt", "geen_interesse", "niet_bruikbaar", "intern", "spam"]) {
+      await db.query(`insert into ig_threads (account_id, ig_conversation_id, fase) values ($1, $2, $3)`, [acc, `f-${f}`, f]);
+    }
+    await db.query(`delete from ig_threads where ig_conversation_id like 'f-%'`);
+  });
+
+  it("is idempotent: dezelfde batch twee keer geeft geen dubbele rijen", async () => {
+    const tweede = await sync(batch());
+    expect(tweede.berichten_nieuw).toBe(0);
+    expect((await db.query(`select 1 from ig_threads where ig_conversation_id = 'conv-a'`)).rows).toHaveLength(1);
+    expect((await db.query(`select 1 from ig_messages`)).rows).toHaveLength(3);
+    expect((await db.query(`select 1 from ig_accounts`)).rows).toHaveLength(1);
+    expect((await db.query(`select 1 from ig_daily_metrics`)).rows).toHaveLength(1);
+  });
+
+  it("berekent laatste bericht en wacht-op-ons zonder autoreply mee te tellen", async () => {
+    const t = await thread("conv-a");
+    expect(t.laatste_tekst).toBe("Vertel eens meer");
+    expect(t.laatste_van).toBe("lead");
+    expect(new Date(t.wacht_op_ons_sinds as string).toISOString()).toBe("2026-10-30T11:00:00.000Z");
+    await sync({ account, threads: [{ ig_conversation_id: "conv-a", messages: [{ ig_message_id: "m4", van: "wij", verzonden_op: "2026-10-30T11:20:00Z", tekst: "Hier de video" }] }] });
+    const na = await thread("conv-a");
+    expect(na.wacht_op_ons_sinds).toBeNull();
+    expect(na.laatste_van).toBe("wij");
+  });
+
+  it("zet de fase uit de sync, maar overschrijft een handmatige fase nooit", async () => {
+    await sync(batch("in_gesprek"));
+    expect((await thread("conv-a")).fase).toBe("in_gesprek");
+    // Zonder fase in de payload blijft de fase staan.
+    await sync(batch());
+    expect((await thread("conv-a")).fase).toBe("in_gesprek");
+    await db.query(`update ig_threads set fase = 'call_geboekt', fase_bron = 'handmatig' where ig_conversation_id = 'conv-a'`);
+    await sync(batch("bookinglink_gestuurd"));
+    const t = await thread("conv-a");
+    expect(t.fase).toBe("call_geboekt");
+    expect(t.fase_bron).toBe("handmatig");
+  });
+
+  it("werkt alleen meegestuurde dagcijfers bij; null blijft 'nog niet beoordeeld'", async () => {
+    await sync({ account, metrics: [{ rapportdag: "2026-10-31", signaal_sterk: 2, bron: { signaal_sterk: "brein" } }] });
+    await sync({ account, metrics: [{ rapportdag: "2026-10-31", nieuwe_gesprekken: 5 }] });
+    const r = (await db.query<Record<string, unknown>>(`select * from ig_daily_metrics where rapportdag = '2026-10-31'`)).rows[0];
+    expect(r).toMatchObject({ nieuwe_gesprekken: 5, signaal_sterk: 2, geen_interesse: null, bron: { signaal_sterk: "brein" } });
+  });
+});
