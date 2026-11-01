@@ -82,10 +82,10 @@ describe("migratie 0001_init", () => {
   });
 });
 
-describe("migratie 0021_instagram", () => {
+describe("migraties 0021_instagram en 0022_ig_webhook", () => {
   let db: PGlite;
   const dir = path.join(__dirname, "..", "supabase", "migrations");
-  const IG = ["ig_accounts", "ig_threads", "ig_messages", "ig_daily_metrics", "ig_sync_runs"];
+  const IG = ["ig_accounts", "ig_threads", "ig_messages", "ig_daily_metrics", "ig_sync_runs", "ig_webhook_events"];
   const sync = async (p: unknown) => (await db.query<{ r: Record<string, unknown> }>(`select ig_sync($1::jsonb) as r`, [JSON.stringify(p)])).rows[0].r;
   const thread = async (conv: string) =>
     (await db.query<Record<string, unknown>>(`select * from ig_threads where ig_conversation_id = $1`, [conv])).rows[0];
@@ -122,7 +122,7 @@ describe("migratie 0021_instagram", () => {
     for (const f of fs.readdirSync(dir).filter((x) => x.endsWith(".sql")).sort()) await db.exec(fs.readFileSync(path.join(dir, f), "utf8"));
   });
 
-  it("maakt de vijf ig_-tabellen met RLS aan en zonder policies", async () => {
+  it("maakt de ig_-tabellen (ook ig_webhook_events) met RLS aan en zonder policies", async () => {
     const r = await db.query<{ relname: string; relrowsecurity: boolean }>(
       `select relname, relrowsecurity from pg_class where relnamespace = 'public'::regnamespace and relkind = 'r' and relname like 'ig\\_%'`,
     );
