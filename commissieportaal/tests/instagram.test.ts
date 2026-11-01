@@ -6,7 +6,7 @@ vi.mock("@/lib/ig/server", () => ({ igSync }));
 
 import { POST } from "@/app/api/ig/sync/route";
 import { igSyncGeautoriseerd } from "@/lib/ig/auth";
-import { duurTekst, IG_PIJPLIJN, instagramLink, kortBericht, tegelWaarde, wachtMinuten } from "@/lib/ig/core";
+import { blijvenLiggen, duurTekst, IG_PIJPLIJN, instagramLink, kortBericht, tegelWaarde, wachtMinuten } from "@/lib/ig/core";
 import { igSyncSchema } from "@/lib/ig/schema";
 
 // Verzonnen testdata; geen echte gesprekken of gebruikersnamen.
@@ -32,6 +32,12 @@ describe("Instagram-pijplijn", () => {
     expect(wachtMinuten("2026-10-30T11:31:00Z", nu)).toBeNull();
     expect(wachtMinuten("2026-10-30T11:29:00Z", nu)).toBe(31);
     expect(wachtMinuten(null, nu)).toBeNull();
+    // Na 7 dagen geen rode badge meer, maar blijven liggen.
+    expect(wachtMinuten("2026-10-23T12:00:00Z", nu)).toBe(7 * 1440);
+    expect(wachtMinuten("2026-10-23T11:59:00Z", nu)).toBeNull();
+    expect(blijvenLiggen("2026-10-23T11:59:00Z", nu)).toBe(true);
+    expect(blijvenLiggen("2026-10-30T11:29:00Z", nu)).toBe(false);
+    expect(blijvenLiggen(null, nu)).toBe(false);
     expect(duurTekst(31)).toBe("31 min");
     expect(duurTekst(190)).toBe("3 u 10 min");
     expect(duurTekst(60 * 52)).toBe("2 d 4 u");

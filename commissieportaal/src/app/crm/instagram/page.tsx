@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CrmBar } from "@/components/crm/crm-bar";
 import { IgBoard, leadTelling, type IgCard } from "@/components/crm/ig-board";
 import { requireCrmUser } from "@/lib/crm/server";
-import { IG_PIJPLIJN, IG_TEGELS, tegelWaarde, wachtMinuten } from "@/lib/ig/core";
+import { blijvenLiggen, IG_HOOFDTEGELS, IG_PIJPLIJN, IG_TEGELS, tegelWaarde, wachtMinuten } from "@/lib/ig/core";
 import { overdrachtAan } from "@/lib/ig/overdracht";
 import { igThreads, laatsteIgDag, laatsteIgSync, magIgBewerken } from "@/lib/ig/server";
 
@@ -32,11 +32,15 @@ export default async function Instagram() {
   const bewerkbaar = magIgBewerken(user);
   // Live tellingen van het bord: bestaande klanten tellen niet als lead.
   const leads = leadTelling(cards);
+  const wachtNu = leads.filter((c) => wachtMinuten(c.wachtSinds, nu) !== null).length;
   const live = [
-    { label: "Leads op het bord (live)", waarde: leads.length },
-    { label: "Wacht nu op ons (live)", waarde: leads.filter((c) => wachtMinuten(c.wachtSinds, nu) !== null).length },
+    { label: "Leads op het bord", waarde: leads.length },
+    { label: "Blijven liggen (> 7 dagen)", waarde: leads.filter((c) => blijvenLiggen(c.wachtSinds, nu)).length },
     { label: "Bestaande klanten (geen lead)", waarde: cards.length - leads.length },
   ];
+  const tegel = (key: string) => IG_TEGELS.find((t) => t.key === key)!;
+  const hoofd = dag ? IG_HOOFDTEGELS.map(tegel) : [];
+  const meer = dag ? IG_TEGELS.filter((t) => !IG_HOOFDTEGELS.includes(t.key) && t.key !== "wacht_nu_op_ons") : [];
 
   return (
     <>
@@ -58,23 +62,34 @@ export default async function Instagram() {
           Dagcijfers <span className="small muted">{dag ? `rapportdag ${datum(dag.rapportdag)} (08:00 tot 08:00)` : "nog geen rapportdag"}</span>
         </h2>
         <div className="crm-tegels">
-          {live.map((t) => (
-            <div key={t.label} className="card crm-tegel">
+          {hoofd.map((t) => (
+            <div key={t.key} className="card crm-tegel">
               <span className="small muted">{t.label}</span>
-              <span className="crm-tegel__waarde">{t.waarde}</span>
+              <span className={dag![t.key] === null || dag![t.key] === undefined ? "small muted" : "crm-tegel__waarde"}>{tegelWaarde(dag![t.key], t.pct)}</span>
             </div>
           ))}
+          <div className="card crm-tegel">
+            <span className="small muted">Wacht nu op ons (live)</span>
+            <span className="crm-tegel__waarde">{wachtNu}</span>
+          </div>
         </div>
-        {dag && (
+        <details className="crm-meer">
+          <summary>Meer cijfers</summary>
           <div className="crm-tegels">
-            {IG_TEGELS.map((t) => (
+            {live.map((t) => (
+              <div key={t.label} className="card crm-tegel">
+                <span className="small muted">{t.label}</span>
+                <span className="crm-tegel__waarde">{t.waarde}</span>
+              </div>
+            ))}
+            {meer.map((t) => (
               <div key={t.key} className="card crm-tegel">
                 <span className="small muted">{t.label}</span>
-                <span className={dag[t.key] === null || dag[t.key] === undefined ? "small muted" : "crm-tegel__waarde"}>{tegelWaarde(dag[t.key], t.pct)}</span>
+                <span className={dag![t.key] === null || dag![t.key] === undefined ? "small muted" : "crm-tegel__waarde"}>{tegelWaarde(dag![t.key], t.pct)}</span>
               </div>
             ))}
           </div>
-        )}
+        </details>
       </section>
 
       <p className="small muted">

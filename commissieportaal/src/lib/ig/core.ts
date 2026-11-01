@@ -23,11 +23,21 @@ export const igFaseLabel = (f: string) => IG_FASES.find((x) => x.key === f)?.lab
 /** Norm: een echt leadbericht moet binnen 30 minuten een antwoord hebben. */
 export const WACHT_NORM_MIN = 30;
 
-/** Minuten dat de lead al wacht, alleen als dat boven de norm ligt; anders null. */
+/** Een leadbericht ouder dan dit telt niet meer als "wacht op ons" maar als "blijven liggen" (Seyed 5887/5888). */
+export const WACHT_VENSTER_DAGEN = 7;
+
+const minutenSinds = (sinds: string, nu: Date) => Math.floor((nu.getTime() - new Date(sinds).getTime()) / 60000);
+
+/** Minuten dat de lead al wacht, alleen tussen de norm en het venster van 7 dagen; anders null. */
 export function wachtMinuten(sinds: string | null | undefined, nu: Date = new Date()): number | null {
   if (!sinds) return null;
-  const min = Math.floor((nu.getTime() - new Date(sinds).getTime()) / 60000);
-  return min > WACHT_NORM_MIN ? min : null;
+  const min = minutenSinds(sinds, nu);
+  return min > WACHT_NORM_MIN && min <= WACHT_VENSTER_DAGEN * 1440 ? min : null;
+}
+
+/** Leadbericht dat langer dan het venster onbeantwoord is gebleven. */
+export function blijvenLiggen(sinds: string | null | undefined, nu: Date = new Date()): boolean {
+  return !!sinds && minutenSinds(sinds, nu) > WACHT_VENSTER_DAGEN * 1440;
 }
 
 /** "45 min", "3 u 10 min", "2 d 4 u". */
@@ -49,6 +59,9 @@ export function instagramLink(gebruikersnaam: string | null | undefined): string
   const u = (gebruikersnaam ?? "").replace(/^@/, "").trim();
   return /^[A-Za-z0-9._]{1,30}$/.test(u) ? `https://ig.me/m/${u}` : "https://www.instagram.com/direct/inbox/";
 }
+
+/** Dagcijfers in de hoofdtegels (naast "Wacht nu op ons", live); de rest staat onder "Meer cijfers". */
+export const IG_HOOFDTEGELS = ["nieuwe_gesprekken", "echte_reactie_lead", "calls_bevestigd"];
 
 /** Tegels bovenaan het bord, in de volgorde van het dagrapport. */
 export const IG_TEGELS: { key: string; label: string; pct?: boolean }[] = [

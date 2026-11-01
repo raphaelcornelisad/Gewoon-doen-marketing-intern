@@ -42,6 +42,26 @@ export async function igThreads(): Promise<IgThreadRow[]> {
   );
 }
 
+export interface IgBericht {
+  id: string;
+  van: "wij" | "lead";
+  verzonden_op: string;
+  tekst: string | null;
+  extra: string[];
+  is_autoreply: boolean;
+}
+
+/** Eén gesprek met alle berichten, voor de inbox (alleen lezen). */
+export async function igGesprek(threadId: string): Promise<{ thread: IgThreadRow; berichten: IgBericht[] } | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(threadId)) return null;
+  const thread = check(await db().from("ig_threads").select(THREAD_COLS).eq("id", threadId).eq("intern", false).eq("is_spam", false).maybeSingle()) as IgThreadRow | null;
+  if (!thread) return null;
+  const berichten = await all<IgBericht>((f, t) =>
+    db().from("ig_messages").select("id, van, verzonden_op, tekst, extra, is_autoreply").eq("thread_id", threadId).order("verzonden_op").order("id").range(f, t),
+  );
+  return { thread, berichten };
+}
+
 export type IgDag = Record<string, number | string | null> & { rapportdag: string; berekend_op: string };
 
 /** Cijfers van de laatste rapportdag (of null als er nog niets is). */

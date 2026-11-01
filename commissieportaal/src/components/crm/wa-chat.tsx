@@ -30,7 +30,21 @@ export function Vinkjes({ status }: { status: string }) {
 }
 
 /** Lijst met chats, met zoeken en een filter op ongelezen. */
-export function WaLijst({ gesprekken, actief }: { gesprekken: WaGesprek[]; actief: string | null }) {
+export function WaLijst({
+  gesprekken,
+  actief,
+  href = (id) => `/crm/inbox?lead=${id}`,
+  leeg = "Nog geen gesprekken. Open een lead en stuur een bericht om te beginnen.",
+  openLabel = "Ongelezen",
+}: {
+  gesprekken: WaGesprek[];
+  actief: string | null;
+  /** Link per chat; standaard de WhatsApp-chat van een lead. */
+  href?: (id: string) => string;
+  leeg?: string;
+  /** Label van het filter op chats met een teller. */
+  openLabel?: string;
+}) {
   const [q, setQ] = useState("");
   const [ongelezen, setOngelezen] = useState(false);
   const z = q.trim().toLowerCase();
@@ -41,13 +55,13 @@ export function WaLijst({ gesprekken, actief }: { gesprekken: WaGesprek[]; actie
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Zoeken" aria-label="Chats zoeken" />
         <div className="wa-filters">
           <button type="button" className={!ongelezen ? "is-actief" : undefined} onClick={() => setOngelezen(false)}>Alle</button>
-          <button type="button" className={ongelezen ? "is-actief" : undefined} onClick={() => setOngelezen(true)}>Ongelezen</button>
+          <button type="button" className={ongelezen ? "is-actief" : undefined} onClick={() => setOngelezen(true)}>{openLabel}</button>
         </div>
       </div>
       <div className="wa-chats">
-        {lijst.length === 0 && <p className="wa-leeg">{gesprekken.length ? "Geen chats gevonden." : "Nog geen gesprekken. Open een lead en stuur een bericht om te beginnen."}</p>}
+        {lijst.length === 0 && <p className="wa-leeg">{gesprekken.length ? "Geen chats gevonden." : leeg}</p>}
         {lijst.map((g) => (
-          <Link key={g.id} href={`/crm/inbox?lead=${g.id}`} className={`wa-chat${actief === g.id ? " is-actief" : ""}`} aria-current={actief === g.id ? "page" : undefined}>
+          <Link key={g.id} href={href(g.id)} className={`wa-chat${actief === g.id ? " is-actief" : ""}`} aria-current={actief === g.id ? "page" : undefined}>
             <span className="wa-avatar" style={{ background: avatarKleur(g.id) }}>{initialen(g.naam)}</span>
             <span className="wa-chat__midden">
               <span className="wa-chat__rij">

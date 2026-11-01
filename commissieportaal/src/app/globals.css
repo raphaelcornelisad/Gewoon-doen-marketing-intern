@@ -295,6 +295,7 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
 .crm-iconbtn--rond { border-radius: 50%; background: var(--vlak); width: 44px; height: 44px; }
 .crm-badge { position: absolute; top: 2px; right: 0; min-width: 18px; height: 18px; border-radius: 9px; background: var(--primair); color: var(--wit); font-size: 11px; font-weight: 800; display: grid; place-items: center; padding: 0 4px; }
 .crm-chip--btn { cursor: pointer; font: inherit; font-size: 12px; font-weight: 700; }
+.crm-chip--btn[aria-pressed="true"] { background: var(--zwart); color: var(--wit); border-color: var(--zwart); }
 .crm-sheet { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 50; overscroll-behavior: contain; display: flex; align-items: flex-end; justify-content: center; }
 @media (min-width: 700px) { .crm-sheet { align-items: center; } }
 .crm-sheet__panel { background: var(--wit); width: 100%; max-width: 480px; max-height: 85vh; max-height: 85dvh; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; border-radius: 16px 16px 0 0; padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 12px; }
@@ -382,6 +383,8 @@ h1 { font-size: 28px; line-height: 1.15; margin: 0 0 8px; letter-spacing: -0.02e
 .crm-tegel { display: grid; gap: 4px; text-decoration: none; color: var(--tekst); }
 a.crm-tegel:hover { border-color: var(--primair); }
 .crm-tegel__waarde { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.crm-meer summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+.crm-meer[open] summary { margin-bottom: 10px; }
 
 /* ---------- CRM-navigatie ---------- */
 .crm-top { display: flex; justify-content: space-between; align-items: center; gap: 16px 32px; flex-wrap: wrap; padding-bottom: 12px; border-bottom: 1px solid var(--rand); }
@@ -467,6 +470,10 @@ body.crm-sleept, body.crm-sleept * { cursor: grabbing !important; user-select: n
 .wa-filters { display: flex; gap: 6px; }
 .wa-filters button { border: 0; border-radius: 999px; padding: 5px 12px; background: var(--wa-kop); color: var(--wa-zacht); font-weight: 600; font-size: 14px; cursor: pointer; }
 .wa-filters button.is-actief { background: #e7fce3; color: #008069; }
+.wa-filters a { border-radius: 999px; padding: 5px 12px; background: var(--wa-kop); color: var(--wa-zacht); font-weight: 600; font-size: 14px; text-decoration: none; }
+.wa-kop .wa-filters a { background: #fff; }
+.wa-filters a.is-actief, .wa-kop .wa-filters a.is-actief { background: #e7fce3; color: #008069; }
+.wa-kop:has(.wa-filters) { justify-content: space-between; flex-wrap: wrap; }
 .wa-chats { overflow-y: auto; flex: 1; }
 .wa-leeg { padding: 24px 16px; color: var(--wa-zacht); text-align: center; }
 .wa-chat { display: flex; gap: 12px; align-items: center; padding: 10px 14px; color: var(--wa-tekst); text-decoration: none; }

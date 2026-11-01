@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { duurTekst, instagramLink, kortBericht, wachtMinuten } from "@/lib/ig/core";
+import { blijvenLiggen, duurTekst, instagramLink, kortBericht, wachtMinuten } from "@/lib/ig/core";
 import { Icon, initialen } from "./icons";
 import { post, Sheet } from "./sheet";
 
@@ -51,6 +51,7 @@ export function IgBoard({
   const [fout, setFout] = useState<string | null>(null);
   const [kies, setKies] = useState<IgCard | null>(null);
   const [nu, setNu] = useState(() => new Date(nuIso));
+  const [filter, setFilter] = useState<"alle" | "wacht" | "liggen">("alle");
   useEffect(() => setCards(initial), [initial]);
   useEffect(() => {
     const t = setInterval(() => setNu(new Date()), 60000);
@@ -136,13 +137,30 @@ export function IgBoard({
   }
 
   const naam = (c: IgCard) => (c.gebruikersnaam ? `@${c.gebruikersnaam}` : "Onbekend");
+  // Filter boven het bord: wacht op ons (laatste 7 dagen) of blijven liggen (ouder). Bestaande klanten tellen niet mee.
+  const wachtLijst = leadTelling(cards).filter((c) => wachtMinuten(c.wachtSinds, nu) !== null);
+  const liggenLijst = leadTelling(cards).filter((c) => blijvenLiggen(c.wachtSinds, nu));
+  const zichtbaar = filter === "wacht" ? wachtLijst : filter === "liggen" ? liggenLijst : cards;
+  const filters = [
+    { key: "alle", label: "Alle gesprekken", n: cards.length },
+    { key: "wacht", label: "Wacht op ons", n: wachtLijst.length },
+    { key: "liggen", label: "Blijven liggen", n: liggenLijst.length },
+  ] as const;
 
   return (
     <>
       {fout && <div className="alert" role="alert">{fout}</div>}
+      <div className="crm-filters" role="group" aria-label="Filter">
+        {filters.map((f) => (
+          <button key={f.key} type="button" className="crm-chip crm-chip--btn" aria-pressed={filter === f.key} onClick={() => setFilter(f.key)}>
+            {f.label} · {f.n}
+          </button>
+        ))}
+        {filter === "liggen" && <span className="small muted">Leadberichten van meer dan 7 dagen geleden zonder antwoord.</span>}
+      </div>
       <div className="crm-board">
         {fases.map((f) => {
-          const col = cards.filter((c) => c.fase === f.key);
+          const col = zichtbaar.filter((c) => c.fase === f.key);
           const leads = leadTelling(col);
           const klanten = col.length - leads.length;
           const wachtend = leads.filter((c) => wachtMinuten(c.wachtSinds, nu) !== null).length;
@@ -161,6 +179,7 @@ export function IgBoard({
               <div className="crm-col__lijst">
                 {col.slice(0, MAX).map((c) => {
                   const wacht = wachtMinuten(c.wachtSinds, nu);
+                  const ligt = blijvenLiggen(c.wachtSinds, nu);
                   const call = c.fase === "call_geboekt";
                   return (
                     <article
@@ -180,9 +199,10 @@ export function IgBoard({
                         <span className="crm-avatar" aria-hidden="true">{initialen(c.gebruikersnaam ?? "?")}</span>
                       </div>
                       <div className="crm-card__body">
-                        {(wacht !== null || c.bestaandeKlant || c.handmatig || call) && (
+                        {(wacht !== null || ligt || c.bestaandeKlant || c.handmatig || call) && (
                           <span className="crm-chips">
                             {wacht !== null && <span className="crm-chip crm-chip--rood" title={`Laatste bericht van de lead: ${kort(c.wachtSinds)}`}>Wacht op ons · {duurTekst(wacht)}</span>}
+                            {ligt && <span className="crm-chip crm-chip--wacht" title={`Laatste bericht van de lead: ${kort(c.wachtSinds)}`}>Blijven liggen</span>}
                             {c.bestaandeKlant && <span className="crm-chip crm-chip--ok">Bestaande klant</span>}
                             {c.handmatig && <span className="crm-chip" title="Fase met de hand gezet; de sync past hem niet meer aan">Handmatig</span>}
                             {call && c.contactId && (
