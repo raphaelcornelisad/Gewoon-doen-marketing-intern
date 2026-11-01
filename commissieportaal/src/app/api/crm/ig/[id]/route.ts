@@ -9,6 +9,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   return crmRoute<{ fase?: string }>(req, async (user, b) => {
     if (typeof b.fase !== "string") throw new CrmError("Geen fase opgegeven.");
-    await zetIgFase(user, id, b.fase);
+    return zetIgFase(user, id, b.fase);
   });
 }

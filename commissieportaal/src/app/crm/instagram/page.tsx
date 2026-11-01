@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { CrmBar } from "@/components/crm/crm-bar";
-import { IgBoard, type IgCard } from "@/components/crm/ig-board";
+import { IgBoard, leadTelling, type IgCard } from "@/components/crm/ig-board";
 import { requireCrmUser } from "@/lib/crm/server";
-import { IG_PIJPLIJN, IG_TEGELS, tegelWaarde } from "@/lib/ig/core";
+import { IG_PIJPLIJN, IG_TEGELS, tegelWaarde, wachtMinuten } from "@/lib/ig/core";
+import { overdrachtAan } from "@/lib/ig/overdracht";
 import { igThreads, laatsteIgDag, laatsteIgSync, magIgBewerken } from "@/lib/ig/server";
 
 export const metadata: Metadata = { title: "Instagram · CRM" };
@@ -26,8 +27,16 @@ export default async function Instagram() {
     wachtSinds: t.wacht_op_ons_sinds,
     handmatig: t.fase_bron === "handmatig",
     bestaandeKlant: t.bestaande_klant,
+    contactId: t.contact_id,
   }));
   const bewerkbaar = magIgBewerken(user);
+  // Live tellingen van het bord: bestaande klanten tellen niet als lead.
+  const leads = leadTelling(cards);
+  const live = [
+    { label: "Leads op het bord (live)", waarde: leads.length },
+    { label: "Wacht nu op ons (live)", waarde: leads.filter((c) => wachtMinuten(c.wachtSinds, nu) !== null).length },
+    { label: "Bestaande klanten (geen lead)", waarde: cards.length - leads.length },
+  ];
 
   return (
     <>
@@ -48,6 +57,14 @@ export default async function Instagram() {
         <h2 style={{ margin: 0 }}>
           Dagcijfers <span className="small muted">{dag ? `rapportdag ${datum(dag.rapportdag)} (08:00 tot 08:00)` : "nog geen rapportdag"}</span>
         </h2>
+        <div className="crm-tegels">
+          {live.map((t) => (
+            <div key={t.label} className="card crm-tegel">
+              <span className="small muted">{t.label}</span>
+              <span className="crm-tegel__waarde">{t.waarde}</span>
+            </div>
+          ))}
+        </div>
         {dag && (
           <div className="crm-tegels">
             {IG_TEGELS.map((t) => (
@@ -60,8 +77,17 @@ export default async function Instagram() {
         )}
       </section>
 
-      <p className="small muted">{cards.length} gesprekken (intern en spam niet getoond)</p>
-      <IgBoard fases={IG_PIJPLIJN.map((f) => ({ key: f.key, label: f.label }))} cards={cards} bewerkbaar={bewerkbaar} nuIso={nu.toISOString()} />
+      <p className="small muted">
+        {leads.length} leads en {cards.length - leads.length} bestaande klanten (intern en spam niet getoond)
+      </p>
+      <IgBoard
+        fases={IG_PIJPLIJN.map((f) => ({ key: f.key, label: f.label }))}
+        cards={cards}
+        bewerkbaar={bewerkbaar}
+        nuIso={nu.toISOString()}
+        klantlabel={user.rol === "admin"}
+        overdrachtAan={overdrachtAan()}
+      />
     </>
   );
 }

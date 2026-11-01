@@ -16,13 +16,35 @@ export interface IgCard {
   wachtSinds: string | null;
   handmatig: boolean;
   bestaandeKlant: boolean;
+  /** Gekoppelde lead in het CRM (na overdracht naar sales). */
+  contactId: string | null;
 }
+
+/** Bestaande klanten tellen niet als lead in de tellingen. */
+export const leadTelling = (cards: IgCard[]) => cards.filter((c) => !c.bestaandeKlant);
 
 const MAX = 500;
 const kort = (iso: string | null) => (iso ? new Date(iso).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "");
 
 /** Kanbanbord voor Instagram-gesprekken, in de stijl van het CRM-bord. Slepen zet de fase handmatig. */
-export function IgBoard({ fases, cards: initial, bewerkbaar, nuIso }: { fases: { key: string; label: string }[]; cards: IgCard[]; bewerkbaar: boolean; /** Tijd van de server-render, zodat server en browser dezelfde wachttijd tonen */ nuIso: string }) {
+export function IgBoard({
+  fases,
+  cards: initial,
+  bewerkbaar,
+  nuIso,
+  klantlabel = false,
+  overdrachtAan = false,
+}: {
+  fases: { key: string; label: string }[];
+  cards: IgCard[];
+  bewerkbaar: boolean;
+  /** Tijd van de server-render, zodat server en browser dezelfde wachttijd tonen */
+  nuIso: string;
+  /** Mag het klantlabel aanpassen (admin). */
+  klantlabel?: boolean;
+  /** IG_SALES_OVERDRACHT staat aan: Call geboekt gaat door naar sales. */
+  overdrachtAan?: boolean;
+}) {
   const router = useRouter();
   const [cards, setCards] = useState(initial);
   const [over, setOver] = useState<string | null>(null);
@@ -99,6 +121,20 @@ export function IgBoard({ fases, cards: initial, bewerkbaar, nuIso }: { fases: {
     }
   }
 
+  async function zetKlant(c: IgCard) {
+    const waarde = !c.bestaandeKlant;
+    const vorige = cards;
+    setCards(cards.map((x) => (x.id === c.id ? { ...x, bestaandeKlant: waarde } : x)));
+    const r = await post(`/api/crm/ig/${c.id}/klant`, { bestaande_klant: waarde });
+    if (!r.ok) {
+      setCards(vorige);
+      setFout(r.message ?? "Klantlabel aanpassen is mislukt.");
+    } else {
+      setFout(null);
+      router.refresh();
+    }
+  }
+
   const naam = (c: IgCard) => (c.gebruikersnaam ? `@${c.gebruikersnaam}` : "Onbekend");
 
   return (
@@ -107,19 +143,25 @@ export function IgBoard({ fases, cards: initial, bewerkbaar, nuIso }: { fases: {
       <div className="crm-board">
         {fases.map((f) => {
           const col = cards.filter((c) => c.fase === f.key);
-          const wachtend = col.filter((c) => wachtMinuten(c.wachtSinds, nu) !== null).length;
+          const leads = leadTelling(col);
+          const klanten = col.length - leads.length;
+          const wachtend = leads.filter((c) => wachtMinuten(c.wachtSinds, nu) !== null).length;
           return (
             <section key={f.key} data-fase={f.key} className={`crm-col${over === f.key ? " crm-col--over" : ""}`}>
               <header className="crm-col__kop">
                 <span className="crm-col__head"><span>{f.label}</span></span>
                 <span className="crm-col__meta">
-                  <span>{col.length} {col.length === 1 ? "gesprek" : "gesprekken"}</span>
+                  <span>
+                    {leads.length} {leads.length === 1 ? "lead" : "leads"}
+                    {klanten ? ` · ${klanten} ${klanten === 1 ? "klant" : "klanten"}` : ""}
+                  </span>
                   <span>{wachtend ? `${wachtend} wacht op ons` : ""}</span>
                 </span>
               </header>
               <div className="crm-col__lijst">
                 {col.slice(0, MAX).map((c) => {
                   const wacht = wachtMinuten(c.wachtSinds, nu);
+                  const call = c.fase === "call_geboekt";
                   return (
                     <article
                       key={c.id}
@@ -138,11 +180,22 @@ export function IgBoard({ fases, cards: initial, bewerkbaar, nuIso }: { fases: {
                         <span className="crm-avatar" aria-hidden="true">{initialen(c.gebruikersnaam ?? "?")}</span>
                       </div>
                       <div className="crm-card__body">
-                        {(wacht !== null || c.bestaandeKlant || c.handmatig) && (
+                        {(wacht !== null || c.bestaandeKlant || c.handmatig || call) && (
                           <span className="crm-chips">
                             {wacht !== null && <span className="crm-chip crm-chip--rood" title={`Laatste bericht van de lead: ${kort(c.wachtSinds)}`}>Wacht op ons · {duurTekst(wacht)}</span>}
                             {c.bestaandeKlant && <span className="crm-chip crm-chip--ok">Bestaande klant</span>}
                             {c.handmatig && <span className="crm-chip" title="Fase met de hand gezet; de sync past hem niet meer aan">Handmatig</span>}
+                            {call && c.contactId && (
+                              <a className="crm-chip crm-chip--ok" href={`/crm/lead/${c.contactId}`}>
+                                In sales
+                              </a>
+                            )}
+                            {call && !c.contactId && !overdrachtAan && (
+                              <span className="crm-chip crm-chip--wacht" title="Zet IG_SALES_OVERDRACHT=aan om Call geboekt automatisch door te zetten">
+                                overdracht naar sales staat uit
+                              </span>
+                            )}
+                            {call && !c.contactId && overdrachtAan && <span className="crm-chip crm-chip--wacht">Nog niet in sales</span>}
                           </span>
                         )}
                         {c.laatsteTekst ? (
@@ -157,6 +210,11 @@ export function IgBoard({ fases, cards: initial, bewerkbaar, nuIso }: { fases: {
                           <Icon name="chat" />
                         </a>
                         <a className="small" href={instagramLink(c.gebruikersnaam)} target="_blank" rel="noopener noreferrer">Open in Instagram</a>
+                        {klantlabel && (
+                          <button type="button" className="crm-chip crm-chip--btn" onClick={() => void zetKlant(c)} title="Een bestaande klant telt niet als lead">
+                            {c.bestaandeKlant ? "Geen klant" : "Markeer als klant"}
+                          </button>
+                        )}
                         {bewerkbaar && (
                           <button type="button" className="crm-iconbtn crm-iconbtn--primair" aria-label="Fase wijzigen" onClick={() => setKies(c)}>
                             <Icon name="move" />
