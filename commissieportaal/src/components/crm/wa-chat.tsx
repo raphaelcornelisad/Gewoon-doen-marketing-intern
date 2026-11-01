@@ -62,7 +62,7 @@ export function WaLijst({
         {lijst.length === 0 && <p className="wa-leeg">{gesprekken.length ? "Geen chats gevonden." : leeg}</p>}
         {lijst.map((g) => (
           <Link key={g.id} href={`${basis}${g.id}`} className={`wa-chat${actief === g.id ? " is-actief" : ""}`} aria-current={actief === g.id ? "page" : undefined}>
-            <span className="wa-avatar" style={{ background: avatarKleur(g.id) }}>{initialen(g.naam)}</span>
+            <span className="wa-avatar" style={{ background: avatarKleur(g.id) }}>{initialen(g.naam.replace(/^@/, ""))}</span>
             <span className="wa-chat__midden">
               <span className="wa-chat__rij">
                 <strong>{g.naam}</strong>
