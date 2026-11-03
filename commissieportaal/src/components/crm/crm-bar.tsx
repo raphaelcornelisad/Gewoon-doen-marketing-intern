@@ -11,10 +11,10 @@ type L = [string, string];
 export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: string; open?: { beoordelen?: number; inbox?: number } }) {
   const hoofd: L[] =
     user.rol === "admin"
-      ? [["/crm", "Dashboard"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"]]
+      ? [["/crm", "Dashboard"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"], ["/crm/bronnen", "Bronnen"]]
       : user.rol === "setter"
-        ? [["/crm", "Dashboard"], ["/crm/bellen", "Bellen"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"]]
-        : [["/crm", "Dashboard"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"]];
+        ? [["/crm", "Dashboard"], ["/crm/bellen", "Bellen"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"], ["/crm/bronnen", "Bronnen"]]
+        : [["/crm", "Dashboard"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"], ["/crm/bronnen", "Bronnen"]];
   const beheer: L[] = [
     ["/crm/overzicht", "Cijfers"],
     ["/crm/belsessies", "Belsessies"],
