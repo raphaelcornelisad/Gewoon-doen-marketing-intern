@@ -20,7 +20,9 @@ export interface BoardCard {
   tags: string[];
   waarde: string | null;
   /** Eigenaar (outbound) of setter-tag (sales) */
-  wie: { id: string; naam: string } | null;
+  wie: { id: string; naam: string; afkorting?: string | null } | null;
+  /** Salesbord: salesmedewerker die de lead heeft opgepakt */
+  verkoper?: { id: string; naam: string; afkorting?: string | null } | null;
   afspraak: string | null;
   belpogingen: number;
   notities: number;
@@ -46,6 +48,8 @@ export function Board({
   setters,
   rol,
   mijnId = null,
+  verkopers = null,
+  isSales = false,
 }: {
   pijplijn: "outbound" | "sales";
   fases: { key: string; label: string }[];
@@ -56,6 +60,10 @@ export function Board({
   rol: "admin" | "setter";
   /** Eigen setter-id (alleen voor setters): om een vrije lead zelf op te pakken */
   mijnId?: string | null;
+  /** Admin: salesmedewerkers om een saleslead aan toe te wijzen */
+  verkopers?: { id: string; naam: string }[] | null;
+  /** Ingelogd als salesmedewerker */
+  isSales?: boolean;
 }) {
   const router = useRouter();
   const [cards, setCards] = useState(initial);
@@ -169,6 +177,13 @@ export function Board({
     }
   }
 
+  async function verkoper(card: BoardCard, verkoperId: string | null) {
+    const r = await post(`/api/crm/opp/${card.id}`, { verkoperId });
+    if (!r.ok) setFout(r.message ?? "Mislukt.");
+    setPaneel(null);
+    router.refresh();
+  }
+
   async function eigenaar(card: BoardCard, setterId: string | null) {
     const r =
       pijplijn === "sales"
@@ -216,15 +231,22 @@ export function Board({
                     <div className="crm-card__top">
                       <Link href={`/crm/lead/${c.contactId}`} className="crm-card__name">{c.salon}</Link>
                       {c.waarde && <span className="crm-card__value">{c.waarde}</span>}
-                      <button
-                        type="button"
-                        className={`crm-avatar${c.wie ? "" : " crm-avatar--leeg"}`}
-                        title={c.wie ? c.wie.naam : "Niet toegewezen"}
-                        aria-label={c.wie ? `Eigenaar: ${c.wie.naam}` : "Niet toegewezen"}
-                        onClick={() => setPaneel({ soort: "eigenaar", card: c })}
-                      >
-                        {c.wie ? initialen(c.wie.naam) : <Icon name="user" size={18} />}
-                      </button>
+                      {(() => {
+                        // Op het salesbord toont het rondje wie de lead oppakt (salesmedewerker); outbound de eigenaar.
+                        const p = pijplijn === "sales" ? c.verkoper : c.wie;
+                        const leeg = pijplijn === "sales" ? "Nog niet opgepakt" : "Niet toegewezen";
+                        return (
+                          <button
+                            type="button"
+                            className={`crm-avatar${p ? "" : " crm-avatar--leeg"}`}
+                            title={p ? p.naam : leeg}
+                            aria-label={p ? `${pijplijn === "sales" ? "Opgepakt door" : "Eigenaar"}: ${p.naam}` : leeg}
+                            onClick={() => setPaneel({ soort: "eigenaar", card: c })}
+                          >
+                            {p ? (p.afkorting ?? initialen(p.naam)) : <Icon name="user" size={18} />}
+                          </button>
+                        );
+                      })()}
                     </div>
                     <div className="crm-card__eigenaar">
                       <span className={`crm-label${c.wie ? "" : " crm-label--leeg"}`}>{c.wie ? c.wie.naam : pijplijn === "sales" ? "Geen setter" : "Niet toegewezen"}</span>
@@ -302,10 +324,46 @@ export function Board({
       {paneel?.soort === "notitie" && (
         <NotitiePaneel contactId={paneel.card.contactId} titel={`Notitie · ${paneel.card.salon}`} onSluit={sluit} />
       )}
-      {paneel?.soort === "eigenaar" && (
-        <Sheet titel={`${pijplijn === "sales" ? "Ingepland door" : "Eigenaar"} · ${paneel.card.salon}`} onClose={sluit}>
+      {paneel?.soort === "eigenaar" && pijplijn === "sales" && (
+        <Sheet titel={`Wie pakt deze lead op · ${paneel.card.salon}`} onClose={sluit}>
           <p style={{ marginTop: 0 }}>
-            {paneel.card.wie ? <>{pijplijn === "sales" ? "Ingepland door" : "Opgepakt door"} <strong>{paneel.card.wie.naam}</strong>.</> : pijplijn === "sales" ? "Geen setter-tag." : "Deze lead is nog van niemand."}
+            {paneel.card.verkoper ? <>Opgepakt door <strong>{paneel.card.verkoper.naam}</strong>.</> : "Nog door niemand opgepakt."}
+            {" "}<span className="muted">Ingepland door: {paneel.card.wie?.naam ?? "geen setter"}.</span>
+          </p>
+          {isSales && mijnId && !paneel.card.verkoper && (
+            <button type="button" className="button" onClick={() => verkoper(paneel.card, mijnId)}>Ik pak deze lead op</button>
+          )}
+          {isSales && mijnId && paneel.card.verkoper?.id === mijnId && (
+            <button type="button" className="button button--small button--ghost" onClick={() => verkoper(paneel.card, null)}>Lead vrijgeven</button>
+          )}
+          {rol === "admin" && verkopers && (
+            <>
+              <strong className="small">Salesmedewerker</strong>
+              <div className="crm-sheet__list">
+                {verkopers.map((s) => (
+                  <button key={s.id} type="button" className="crm-stage" aria-pressed={paneel.card.verkoper?.id === s.id} onClick={() => verkoper(paneel.card, s.id)}>{s.naam}</button>
+                ))}
+                <button type="button" className="crm-stage" onClick={() => verkoper(paneel.card, null)}>Niemand</button>
+              </div>
+            </>
+          )}
+          {rol === "admin" && setters && (
+            <>
+              <strong className="small">Ingepland door (setter-tag, commissie)</strong>
+              <div className="crm-sheet__list">
+                {setters.map((s) => (
+                  <button key={s.id} type="button" className="crm-stage" aria-pressed={paneel.card.wie?.id === s.id} onClick={() => eigenaar(paneel.card, s.id)}>{s.naam}</button>
+                ))}
+                <button type="button" className="crm-stage" onClick={() => eigenaar(paneel.card, null)}>Niemand</button>
+              </div>
+            </>
+          )}
+        </Sheet>
+      )}
+      {paneel?.soort === "eigenaar" && pijplijn === "outbound" && (
+        <Sheet titel={`Eigenaar · ${paneel.card.salon}`} onClose={sluit}>
+          <p style={{ marginTop: 0 }}>
+            {paneel.card.wie ? <>Opgepakt door <strong>{paneel.card.wie.naam}</strong>.</> : "Deze lead is nog van niemand."}
           </p>
           {rol === "admin" && setters && (
             <div className="crm-sheet__list">

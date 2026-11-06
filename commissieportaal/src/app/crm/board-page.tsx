@@ -33,6 +33,7 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
   const gesprekken = sp.toon === "gesprekken";
   const [alle, setters, mijnViews] = await Promise.all([loadCards(pijplijn, user), acqSetters(), views(user)]);
   const naam = new Map(setters.map((s) => [s.id, s.naam]));
+  const persoon = (id: string | null) => (id ? { id, naam: naam.get(id) ?? "?", afkorting: setters.find((s) => s.id === id)?.afkorting ?? null } : null);
   const opties = filterOptions(alle);
   const cards = filterCards(alle, f, user);
   const path = `/crm/${pijplijn}`;
@@ -113,7 +114,8 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
       behandelingen: k.behandelingen,
       tags: k.tags,
       waarde: c.waarde_cents ? formatEuro(c.waarde_cents) : null,
-      wie: wie ? { id: wie, naam: naam.get(wie) ?? "?" } : null,
+      wie: persoon(wie),
+      verkoper: pijplijn === "sales" ? persoon(c.verkoper_id) : null,
       afspraak: volgendeActie(c),
       belpogingen: k.belpogingen,
       notities: notities.get(k.id)?.aantal ?? 0,
@@ -225,8 +227,10 @@ export async function BoardPage({ pijplijn, searchParams }: { pijplijn: Pijplijn
           waardes={waardes}
           alleTags={opties.tags}
           setters={user.rol === "admin" ? setters.filter((x) => x.actief).map((x) => ({ id: x.id, naam: x.naam })) : null}
+          verkopers={user.rol === "admin" ? setters.filter((x) => x.actief && x.rol === "sales").map((x) => ({ id: x.id, naam: x.naam })) : null}
+          isSales={user.rol === "sales"}
           rol={user.rol === "admin" ? "admin" : "setter"}
-          mijnId={user.rol === "setter" ? user.setter.id : null}
+          mijnId={user.rol === "admin" ? null : user.setter.id}
         />
       )}
     </>

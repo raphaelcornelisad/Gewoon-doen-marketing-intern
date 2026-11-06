@@ -18,6 +18,8 @@ export interface AcqSetter {
   rol: "setter" | "sales";
   /** Eigen 06 (E.164) dat de klant ziet bij bellen vanuit het CRM */
   beller_nummer: string | null;
+  /** Eigen afkorting op de kaart (bv. "H"); leeg = initialen */
+  afkorting: string | null;
 }
 
 export async function acqSetters(): Promise<AcqSetter[]> {
