@@ -136,7 +136,7 @@ export function TemplateForm({ tpl }: { tpl?: Tpl }) {
   );
 }
 
-type G = { id?: string; naam: string; email: string; rol: string; start_datum: string; actief: boolean; utm_source?: string | null; beller_nummer?: string | null };
+type G = { id?: string; naam: string; email: string; rol: string; start_datum: string; actief: boolean; utm_source?: string | null; beller_nummer?: string | null; uitgenodigd_op?: string | null };
 
 export function GebruikerForm({ g }: { g?: G }) {
   const o = useOpslaan();
@@ -155,7 +155,15 @@ export function GebruikerForm({ g }: { g?: G }) {
         <label>Oude persoonlijke Calendly-code (optioneel)<input value={v.utm_source ?? ""} onChange={t("utm_source")} /></label>
         <label className="crm-check"><input type="checkbox" checked={v.actief} onChange={(e) => setV({ ...v, actief: e.target.checked })} /> Actief</label>
       </div>
-      <button type="submit" className="button button--small" disabled={o.busy}>{g ? "Opslaan" : "Gebruiker toevoegen"}</button>
+      <div className="inline-form__row">
+        <button type="submit" className="button button--small" disabled={o.busy}>{g ? "Opslaan" : "Gebruiker toevoegen"}</button>
+        {g?.id && g.actief && (
+          <button type="button" className="button button--small button--ghost" disabled={o.busy} onClick={() => void o.run("uitnodigen", { id: g.id })}>
+            {g.uitgenodigd_op ? "Uitnodiging opnieuw sturen" : "Uitnodiging sturen"}
+          </button>
+        )}
+      </div>
+      {g?.uitgenodigd_op && <span className="small muted">Uitgenodigd op {new Date(g.uitgenodigd_op).toLocaleString("nl-NL", { timeZone: "Europe/Amsterdam" })}</span>}
       <o.Msg />
     </form>
   );

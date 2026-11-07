@@ -1,6 +1,7 @@
 import { crmRoute } from "@/lib/crm/api";
 import { slaGebruikerOp, slaInstellingenOp, slaScriptOp, slaTemplateOp, webhookAanzetten } from "@/lib/crm/instellingen";
 import { CrmError } from "@/lib/crm/server";
+import { stuurUitnodiging } from "@/lib/crm/uitnodiging";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,10 @@ export async function POST(req: Request) {
       case "gebruiker":
         await slaGebruikerOp(user, b.data);
         return { message: "Gebruiker opgeslagen." };
+      case "uitnodigen":
+        if (user.rol !== "admin") throw new CrmError("Alleen de admin.", 403);
+        await stuurUitnodiging(String(b.data?.id ?? ""));
+        return { message: "Uitnodiging verstuurd." };
       default:
         throw new CrmError("Onbekende instelling.");
     }
