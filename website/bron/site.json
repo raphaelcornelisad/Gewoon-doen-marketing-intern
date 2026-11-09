@@ -1,0 +1,179 @@
+{
+  "_uitleg": "Alle instellingen en vaste teksten van de site. Na een wijziging: python3 build.py. Velden met TODO in _todo moeten nog ingevuld/bevestigd worden.",
+  "_todo": [
+    "links.kennismaken: echte Calendly-link van het kennismakingsgesprek",
+    "links.trustpilot + trustpilot_business_unit_id: echte Trustpilot-pagina en TrustBox-ID",
+    "video.vsl_embed: embed-URL van de VSL (Wistia/YouTube/Vimeo)",
+    "video.training_embed: embed-URL van de videotraining (lead magnet)",
+    "reviews: echte Trustpilot-reviews (tekst, naam, salon) overnemen",
+    "oprichters: foto's + tweede oprichter bevestigen",
+    "cases: toestemming van de salons voor naam en foto + resultaten (cijfers) toevoegen",
+    "voorbeeld_videos: links naar voorbeeldvideo's van de contentdagen",
+    "bedrijf: KvK-nummer en adres"
+  ],
+  "preview": true,
+  "domein": "https://gewoondoenmarketing.nl",
+  "bedrijf": {
+    "naam": "Gewoon Doen Marketing",
+    "email": "info@gewoondoenmarketing.nl",
+    "kvk": "",
+    "plaats": "Nederland",
+    "instagram": "https://www.instagram.com/gewoondoenmarketing/",
+    "linkedin": ""
+  },
+  "links": {
+    "kennismaken": "https://calendly.com/gewoondoenmarketing/kennismaking",
+    "trustpilot": "https://nl.trustpilot.com/review/gewoondoenmarketing.nl"
+  },
+  "trustpilot_business_unit_id": "",
+  "video": {
+    "vsl_embed": "",
+    "vsl_duur": "4 minuten",
+    "training_embed": "",
+    "training_titel": "Zo vul je je agenda met behandeltrajecten in plaats van losse afspraken"
+  },
+  "aankondiging": {
+    "label": "Nieuw",
+    "tekst": "Gratis videotraining voor salon- en kliniekeigenaren",
+    "link": "/gratis-training"
+  },
+  "klanten": [
+    "Beauty Clinic Dali", "Contoura Groningen", "La Beauté de Sara", "Soléa Instituut", "Silk & Glow",
+    "Laserdept Breda", "Mijn Huidspecialist", "Babeau Huidinstituut", "Perfect Skin & Beauty", "Private Medi Clinic",
+    "Valentijn Beauty Salon", "Beauty Studio Marijke", "Allure", "Bellissima Apeldoorn", "Van den Berk Huidtherapie",
+    "Sia Beauty", "Sa Baran", "NEI therapie Deurne", "UvaCare", "Kliniek Groene Hart", "Lara's Utrecht", "Happy Skin"
+  ],
+  "aantal_klanten_tekst": "30+ salons en klinieken",
+  "platforms": ["Instagram", "Facebook", "Google", "TikTok", "WhatsApp"],
+  "agendas": ["Salonized", "SalonSoft", "Treatwell", "Fresha", "Calendly", "Eigen agenda"],
+  "cases": [
+    {
+      "foto": "sara.webp",
+      "naam": "Sara",
+      "salon": "La Beauté de Sara",
+      "plaats": "Capelle aan den IJssel",
+      "behandeling": "Bye Bye Onderkin (HIFU)",
+      "wat": "Actiepagina, campagne en opvolging van elke aanvraag tot in de agenda.",
+      "resultaat": ""
+    },
+    {
+      "foto": "sharonna.webp",
+      "naam": "Sharonna",
+      "salon": "Beauty Clinic Dali",
+      "plaats": "Lelystad",
+      "behandeling": "Microneedling & PRX",
+      "wat": "Nieuwe website, campagnes voor huidverbetering en een vaste opvolgstructuur.",
+      "resultaat": ""
+    },
+    {
+      "foto": "tieneke.webp",
+      "naam": "Tieneke",
+      "salon": "Contoura Groningen",
+      "plaats": "Groningen",
+      "behandeling": "Cryolipolyse",
+      "wat": "Website, figuuranalyse als instap en campagnes die intakes opleveren.",
+      "resultaat": ""
+    },
+    {
+      "foto": "gina.webp",
+      "naam": "Gina",
+      "salon": "NEI therapie Deurne",
+      "plaats": "Deurne",
+      "behandeling": "NEI therapie",
+      "wat": "Artikel, salespagina en een gratis check-in die direct in de agenda landt.",
+      "resultaat": ""
+    }
+  ],
+  "voorbeeld_videos": [],
+  "reviews": [],
+  "oprichters": [
+    {
+      "naam": "Raphaël Cornelis",
+      "rol": "Oprichter",
+      "foto": "",
+      "tekst": "Raphaël zag hoe goede salons en klinieken worstelden met marketing die veel beloofde en weinig opleverde. Mooie posts, dure bureaus, maar een lege agenda. Daarom begon hij Gewoon Doen: geen ingewikkelde rapporten, wel een volle agenda. Hij spreekt elke nieuwe ondernemer zelf in het strategiegesprek."
+    }
+  ],
+  "beloftes": [
+    {"kop": "Afspraak is afspraak", "tekst": "Wat we in het strategiegesprek afspreken, leggen we vast. En we doen het ook."},
+    {"kop": "Binnen een week live", "tekst": "Na de contentdag staat je campagne meestal binnen een week klaar."},
+    {"kop": "Eén vast aanspreekpunt", "tekst": "Je hebt een eigen WhatsApp-groep met ons team. Geen ticketsysteem, geen wachtrij."},
+    {"kop": "Geen vakjargon", "tekst": "Je hoort van ons wat het oplevert: hoeveel mensen er in je agenda staan. Niet hoeveel 'impressies' je had."}
+  ],
+  "faq": [
+    {"v": "Voor wie is Gewoon Doen Marketing?", "a": "Voor eigenaren van beautysalons, huidinstituten en esthetische klinieken die meer behandeltrajecten willen verkopen en geen zin hebben om zelf marketing te leren."},
+    {"v": "Moet ik zelf veel doen?", "a": "Nee. Jij hebt een strategiegesprek van een half uur en een contentdag in je salon. Daarna doen wij de campagnes, het bellen van aanvragen en het inplannen. Jij doet de behandelingen."},
+    {"v": "Wat kost het?", "a": "Dat hangt af van je salon, je behandelingen en je doelen. We zijn een boutique bureau en werken met een beperkt aantal salons tegelijk. In het kennismakingsgesprek hoor je precies wat het kost en wat je ervoor terugkrijgt."},
+    {"v": "Werkt het met mijn agenda?", "a": "Ja. We plannen in de agenda die je al gebruikt, bijvoorbeeld Salonized, SalonSoft, Treatwell of Fresha. Je hoeft niets over te zetten."},
+    {"v": "Hoe snel zie ik resultaat?", "a": "Na de contentdag staat je campagne meestal binnen een week live. Vanaf dat moment komen de eerste aanvragen binnen in je WhatsApp-groep."},
+    {"v": "Zit ik ergens lang aan vast?", "a": "Dat bespreken we eerlijk in het kennismakingsgesprek. We willen dat je blijft omdat het werkt, niet omdat een contract dat zegt."}
+  ],
+  "stappen": [
+    {"wie": "jij", "kop": "Kennismaken", "tekst": "Een kort gesprek: past jouw salon bij ons, en wij bij jou? Geen verkooppraatje.", "duur": "15 min"},
+    {"wie": "jij", "kop": "Strategiegesprek", "tekst": "Een half uur samen. Welke behandeling wil je vaker verkopen, voor wie, en wat is je aanbod? Je krijgt direct concrete actiestappen.", "duur": "30 min"},
+    {"wie": "wij", "kop": "Contentdag in je salon", "tekst": "We komen langs en maken in één dag foto's en video's van jou, je salon en je behandelingen. Echt en herkenbaar.", "duur": "1 dag"},
+    {"wie": "wij", "kop": "Campagne live", "tekst": "Wij maken de advertenties en zetten ze live op Instagram, Facebook, Google of TikTok. Meestal binnen een week.", "duur": "± 1 week"},
+    {"wie": "wij", "kop": "Aanvragen in je WhatsApp", "tekst": "Elke aanvraag komt binnen in jullie gezamenlijke WhatsApp-groep. Je ziet precies wie er interesse heeft.", "duur": "dagelijks"},
+    {"wie": "wij", "kop": "Wij bellen en plannen in", "tekst": "Ons team belt elke aanvraag, stelt de juiste vragen en zet de afspraak direct in jouw agenda.", "duur": "dagelijks"},
+    {"wie": "wij", "kop": "Van afspraak naar traject", "tekst": "We bouwen samen een aanbod waardoor een eerste afspraak uitgroeit tot een behandeltraject. Inclusief hoe je het gesprek voert.", "duur": "doorlopend"},
+    {"wie": "wij", "kop": "Je klantenbestand weer actief", "tekst": "Klanten die al even niet geweest zijn, nodigen we persoonlijk opnieuw uit. Zo groeit je salon van binnenuit.", "duur": "doorlopend"}
+  ],
+  "specialisaties": [
+    {
+      "slug": "laserontharen", "naam": "Laserontharen", "behandeling": "Laserontharen",
+      "kop": "Meer klanten voor laserontharen",
+      "intro": "Laserontharen is een traject van meerdere sessies. Daar ligt je kans: één goede intake levert een klant op die maanden terugkomt.",
+      "uitdaging": "Veel mensen twijfelen over pijn, prijs en of het bij hun huid werkt. Ze kijken rond, vragen informatie aan bij drie salons en kiezen wie als eerste belt en het duidelijkst uitlegt.",
+      "aanpak": ["Campagnes op het moment dat mensen eraan denken: ruim voor de zomer", "Een gratis of laagdrempelige proefbehandeling of intake als instap", "Binnen korte tijd bellen, zodat jij die eerste salon bent", "Een pakketaanbod waardoor de klant het hele traject bij jou doet"]
+    },
+    {
+      "slug": "huidverbetering", "naam": "Huidverbetering & microneedling", "behandeling": "Microneedling",
+      "kop": "Huidverbetering verkopen als traject, niet als losse behandeling",
+      "intro": "Microneedling, peelings en huidverbetering werken het best in een reeks. Toch kopen veel klanten één keer en komen ze niet terug.",
+      "uitdaging": "Resultaat bij huidverbetering is geleidelijk. Wie na één behandeling geen wonder ziet, haakt af. Het verschil zit in de uitleg en het aanbod vooraf.",
+      "aanpak": ["Een huidanalyse als instap, zodat de klant zich gezien voelt", "Content met jou in beeld: vertrouwen verkoopt huidverbetering", "Een helder trajectaanbod in plaats van losse prijzen", "Opvolging tussen behandelingen zodat klanten niet afhaken"]
+    },
+    {
+      "slug": "prx", "naam": "PRX-therapie", "behandeling": "PRX",
+      "kop": "PRX-therapie bekend maken in jouw regio",
+      "intro": "PRX is voor veel mensen nog onbekend. Dat is een voordeel: wie het als eerste goed uitlegt, wordt dé plek in de buurt.",
+      "uitdaging": "Een nieuwe behandeling vraagt meer uitleg. Een advertentie met alleen een naam en een prijs werkt niet; mensen moeten eerst begrijpen wat het voor hén doet.",
+      "aanpak": ["Eerst je eigen klantenbestand informeren", "Korte video's waarin jij uitlegt wat PRX is, zonder vakjargon", "Een intake waarin je PRX combineert met de juiste thuiszorg", "Campagnes voor nieuwe klanten zodra de uitleg staat"]
+    },
+    {
+      "slug": "botox-en-fillers", "naam": "Botox & fillers", "behandeling": "Botox & fillers",
+      "kop": "Marketing voor botox en fillers, binnen de regels",
+      "intro": "Reclame maken voor botox richting consumenten mag in Nederland niet: het is een geneesmiddel op recept. Je kunt wel laten zien wie je bent en waarom mensen jou vertrouwen.",
+      "uitdaging": "Veel klinieken weten niet wat wel en niet mag, en adverteren daardoor helemaal niet, of juist op een manier die risico oplevert.",
+      "aanpak": ["Campagnes rond het consult en de arts, niet rond het middel", "Uitleg over je werkwijze, veiligheid en natuurlijk resultaat", "Zorgvuldige opvolging: een intake bij de arts, geen verkoopgesprek", "Teksten die we vooraf met jou afstemmen"]
+    },
+    {
+      "slug": "profhilo", "naam": "Profhilo", "behandeling": "Profhilo",
+      "kop": "Profhilo bij de juiste klanten onder de aandacht",
+      "intro": "Profhilo spreekt mensen aan die er fris en verzorgd uit willen zien, zonder dat het opvalt. Dat verhaal vraagt om rust en vertrouwen in je marketing.",
+      "uitdaging": "De doelgroep is kritisch en wil weten wie de behandeling uitvoert. Schreeuwerige acties schrikken juist af.",
+      "aanpak": ["Jij en je team als gezicht van de campagne", "Een consult als eerste stap, met tijd voor vragen", "Opvolging door iemand die rustig en deskundig uitlegt", "Combinatie met huidverbetering als vervolgtraject"]
+    },
+    {
+      "slug": "medisch-afvallen", "naam": "Medisch afvallen", "behandeling": "Medisch afvallen",
+      "kop": "Medisch afvallen verantwoord promoten",
+      "intro": "Steeds meer mensen zoeken begeleiding bij afvallen. Als kliniek kun je die zoektocht beantwoorden, mits je het verantwoord brengt.",
+      "uitdaging": "Medicatie mag je niet aanprijzen en beloftes over kilo's zijn riskant. Tegelijk zoeken mensen wel degelijk hulp en vertrouwen.",
+      "aanpak": ["Campagnes rond begeleiding, het intakegesprek en de arts", "Eerlijke verwachtingen in elke tekst", "Een intake die past bij de medische zorgvuldigheid", "Een traject met begeleiding in plaats van een product"]
+    },
+    {
+      "slug": "cryolipolyse", "naam": "Cryolipolyse", "behandeling": "Cryolipolyse",
+      "kop": "Meer intakes voor cryolipolyse",
+      "intro": "Cryolipolyse spreekt veel mensen aan, maar de markt zit vol met beloftes die te mooi klinken. Eerlijkheid is hier je sterkste verkoopargument.",
+      "uitdaging": "Klanten hebben vaak al verhalen gelezen en zijn sceptisch. Ze willen weten of het bij hén werkt.",
+      "aanpak": ["Een figuuranalyse of intake als instap", "Eerlijke uitleg: voor wie het werkt en voor wie niet", "Opvolging die vragen beantwoordt voordat ze bezwaren worden", "Een trajectaanbod met meerdere zones of sessies"]
+    },
+    {
+      "slug": "pmu", "naam": "PMU", "behandeling": "PMU",
+      "kop": "Meer klanten voor permanente make-up",
+      "intro": "Bij PMU kiest een klant op basis van jouw werk. Je portfolio is je beste advertentie, als het op de goede plek staat.",
+      "uitdaging": "Klanten vergelijken heel veel salons en zijn bang voor een resultaat dat niet bij ze past. Vertrouwen in jou als artiest is alles.",
+      "aanpak": ["Healed resultaten in je advertenties, niet alleen 'net gezet'", "Jij in beeld: wie zet het en hoe werk je", "Een consult als eerste stap", "Opvolging en herinneringen voor de touch-up"]
+    }
+  ]
+}
