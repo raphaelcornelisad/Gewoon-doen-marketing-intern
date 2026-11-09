@@ -177,7 +177,7 @@ export async function getContact(id: string): Promise<Contact> {
 
 /** Outbound bewerken: admin, of setter als de lead van niemand of van haar is. */
 export function magOutbound(c: Pick<Contact, "eigenaar_id">, u: CrmUser) {
-  return u.rol === "admin" || (u.rol === "setter" && (!c.eigenaar_id || c.eigenaar_id === u.setter.id));
+  return u.rol === "admin" || ((u.rol === "setter" || u.rol === "sales") && (!c.eigenaar_id || c.eigenaar_id === u.setter.id));
 }
 
 /** Sales bewerken: admin, elke salesmedewerker (het hele salesbord), of de setter die de lead heeft ingepland (setter-tag). */
@@ -188,7 +188,7 @@ export function magSales(o: Pick<Opp, "verkoper_id" | "setter_id">, u: CrmUser) 
 /** Lead zien: admin; setter (belpool + eigen + door haar ingepland); sales (toegewezen salesleads). */
 function magZien(c: Contact, sales: Opp | null, u: CrmUser) {
   if (u.rol === "admin") return true;
-  if (u.rol === "sales") return !!sales;
+  if (u.rol === "sales") return true; // salesmedewerker heeft overzicht over het hele CRM
   return !c.eigenaar_id || c.eigenaar_id === u.setter.id || sales?.setter_id === u.setter.id;
 }
 
@@ -230,7 +230,6 @@ export async function loadCards(pijplijn: Pijplijn, user: CrmUser): Promise<Card
     // Salesmedewerkers zien alle salesleads; met het plusje geven ze aan wie welke lead oppakt.
     return q.order("fase_sinds", { ascending: false }).order("id").range(from, to);
   });
-  if (pijplijn === "outbound" && user.rol === "sales") return [];
   // Klanten horen niet in de werklijsten (outbound of call geboekt).
   const klanten = new Set(
     (await all<{ contact_id: string }>((f, t) => db().from("crm_opportunities").select("contact_id").eq("pijplijn", "outbound").eq("fase", "klant").order("contact_id").range(f, t))).map((r) => r.contact_id),
@@ -609,14 +608,14 @@ export async function updateContact(user: CrmUser, id: string, input: ContactInp
   }
   if (input.eigenaar_id !== undefined) {
     // Setter mag een vrije lead zelf oppakken of de eigen lead weer vrijgeven; anderen toewijzen kan alleen de admin.
-    const zelf = user.rol === "setter" && ((input.eigenaar_id === user.setter.id && !c.eigenaar_id) || (!input.eigenaar_id && c.eigenaar_id === user.setter.id));
+    const zelf = (user.rol === "setter" || user.rol === "sales") && ((input.eigenaar_id === user.setter.id && !c.eigenaar_id) || (!input.eigenaar_id && c.eigenaar_id === user.setter.id));
     if (user.rol !== "admin" && !zelf) throw new CrmError(c.eigenaar_id && c.eigenaar_id !== user.setter?.id ? "Deze lead is al van een andere setter." : "Alleen de admin wijst leads toe.", 403);
     data.eigenaar_id = input.eigenaar_id || null;
     if (input.eigenaar_id && !c.oorspronkelijke_setter_id) data.oorspronkelijke_setter_id = input.eigenaar_id;
   }
   try {
     let q = db().from("crm_contacts").update({ ...data, updated_at: new Date().toISOString() }).eq("id", id);
-    if (user.rol === "setter" && input.eigenaar_id) q = q.is("eigenaar_id", null); // niet tegelijk door twee setters
+    if (user.rol !== "admin" && input.eigenaar_id) q = q.is("eigenaar_id", null); // niet tegelijk door twee setters
     check(await q);
   } catch (e) {
     throw dupMessage(e);

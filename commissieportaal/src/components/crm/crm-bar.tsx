@@ -14,7 +14,7 @@ export async function CrmBar({ user, actief, open }: { user: CrmUser; actief: st
       ? [["/crm", "Dashboard"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"], ["/crm/bronnen", "Bronnen"]]
       : user.rol === "setter"
         ? [["/crm", "Dashboard"], ["/crm/bellen", "Bellen"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"], ["/crm/bronnen", "Bronnen"]]
-        : [["/crm", "Dashboard"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"], ["/crm/bronnen", "Bronnen"]];
+        : [["/crm", "Dashboard"], ["/crm/outbound", "CRM Outbound"], ["/crm/sales", "CRM Sales"], ["/crm/agenda", "Agenda"], ["/crm/inbox", "Inbox"], ["/crm/instagram", "Instagram"], ["/crm/bronnen", "Bronnen"]];
   const beheer: L[] = [
     ["/crm/overzicht", "Cijfers"],
     ["/crm/belsessies", "Belsessies"],
