@@ -180,15 +180,15 @@ export function magOutbound(c: Pick<Contact, "eigenaar_id">, u: CrmUser) {
   return u.rol === "admin" || (u.rol === "setter" && (!c.eigenaar_id || c.eigenaar_id === u.setter.id));
 }
 
-/** Sales bewerken: admin, de toegewezen salesmedewerker, of de setter die de lead heeft ingepland (setter-tag). */
+/** Sales bewerken: admin, elke salesmedewerker (het hele salesbord), of de setter die de lead heeft ingepland (setter-tag). */
 export function magSales(o: Pick<Opp, "verkoper_id" | "setter_id">, u: CrmUser) {
-  return u.rol === "admin" || (u.rol === "sales" && o.verkoper_id === u.setter.id) || (u.rol === "setter" && o.setter_id === u.setter.id);
+  return u.rol === "admin" || u.rol === "sales" || (u.rol === "setter" && o.setter_id === u.setter.id);
 }
 
 /** Lead zien: admin; setter (belpool + eigen + door haar ingepland); sales (toegewezen salesleads). */
 function magZien(c: Contact, sales: Opp | null, u: CrmUser) {
   if (u.rol === "admin") return true;
-  if (u.rol === "sales") return !!sales && (!sales.verkoper_id || sales.verkoper_id === u.setter.id);
+  if (u.rol === "sales") return !!sales;
   return !c.eigenaar_id || c.eigenaar_id === u.setter.id || sales?.setter_id === u.setter.id;
 }
 
@@ -227,8 +227,7 @@ export async function loadCards(pijplijn: Pijplijn, user: CrmUser): Promise<Card
   const cards = await all<Card>((from, to) => {
     let q = db().from("crm_opportunities").select(`${OPP_COLS}, contact:crm_contacts!inner(${CONTACT_COLS})`).eq("pijplijn", pijplijn).eq("contact.crm_id", crm);
     if (pijplijn === "sales" && user.rol === "setter") q = q.eq("setter_id", user.setter.id);
-    // Salesmedewerker ziet eigen salesleads en leads die nog niemand heeft opgepakt.
-    if (pijplijn === "sales" && user.rol === "sales") q = q.or(`verkoper_id.eq.${user.setter.id},verkoper_id.is.null`);
+    // Salesmedewerkers zien alle salesleads; met het plusje geven ze aan wie welke lead oppakt.
     return q.order("fase_sinds", { ascending: false }).order("id").range(from, to);
   });
   if (pijplijn === "outbound" && user.rol === "sales") return [];
@@ -251,7 +250,7 @@ export function filterCards(cards: Card[], f: BoardFilter, user: CrmUser): Card[
     if (f.weergave === "vandaag" && !(opv !== null && opv >= vandaagStart && opv < vandaagEind)) return false;
     if (f.weergave === "achterstallig" && !(opv !== null && opv < vandaagStart)) return false;
     if (f.weergave === "nieuw" && c.fase !== "nieuw") return false;
-    if (f.weergave === "mijn" && !(user.setter && (k.eigenaar_id === user.setter.id || c.setter_id === user.setter.id))) return false;
+    if (f.weergave === "mijn" && !(user.setter && (k.eigenaar_id === user.setter.id || c.setter_id === user.setter.id || c.verkoper_id === user.setter.id))) return false;
     if (f.weergave === "vrij" && k.eigenaar_id) return false;
     if (f.heeft === "telefoon" && !k.telefoon_norm) return false;
     if (f.heeft === "website" && !k.website) return false;
@@ -516,12 +515,10 @@ export async function setSalesSetter(user: CrmUser, oppId: string, setterId: str
 
 export async function setVerkoper(user: CrmUser, oppId: string, verkoperId: string | null) {
   const o = await getOpp(oppId);
-  // Salesmedewerker mag een vrije saleslead zelf oppakken of de eigen lead vrijgeven; anderen toewijzen kan alleen de admin.
-  const zelf = user.rol === "sales" && ((verkoperId === user.setter.id && !o.verkoper_id) || (!verkoperId && o.verkoper_id === user.setter.id));
-  if (user.rol !== "admin" && !zelf) throw new CrmError(o.verkoper_id && o.verkoper_id !== user.setter?.id ? "Deze lead is al opgepakt door een andere salesmedewerker." : "Alleen de admin wijst salesleads toe.", 403);
-  let q = db().from("crm_opportunities").update({ verkoper_id: verkoperId, updated_at: new Date().toISOString() }).eq("id", o.id);
-  if (user.rol !== "admin" && verkoperId) q = q.is("verkoper_id", null); // niet tegelijk door twee mensen
-  check(await q);
+  // Salesmedewerker mag een lead zelf oppakken (ook overnemen; staat in de historie) of de eigen lead vrijgeven; anderen toewijzen kan alleen de admin.
+  const zelf = user.rol === "sales" && (verkoperId === user.setter.id || (!verkoperId && o.verkoper_id === user.setter.id));
+  if (user.rol !== "admin" && !zelf) throw new CrmError("Alleen de admin wijst salesleads aan een ander toe.", 403);
+  check(await db().from("crm_opportunities").update({ verkoper_id: verkoperId, updated_at: new Date().toISOString() }).eq("id", o.id));
   await log({ contact_id: o.contact_id, ...actor(user), type: "eigenaar", pijplijn: "sales", van: o.verkoper_id, naar: verkoperId, tekst: "Salesmedewerker aangepast" });
 }
 

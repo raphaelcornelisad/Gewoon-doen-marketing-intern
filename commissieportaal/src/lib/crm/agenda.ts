@@ -38,7 +38,7 @@ export async function agenda(user: CrmUser, van: string, tot: string): Promise<A
     .map((r) => ({ ...r, sales: sales.get(r.contact.id) ?? null }))
     .filter((r) => {
       if (user.rol === "admin") return true;
-      if (user.rol === "sales") return r.sales?.verkoper_id === user.setter.id;
+      if (user.rol === "sales") return !!r.sales;
       return r.setter_id === user.setter.id || r.contact.eigenaar_id === user.setter.id;
     });
 }

@@ -34,7 +34,7 @@ export function variabelen(c: Contact, setterNaam: string | null) {
 async function magBerichten(c: Contact, user: CrmUser) {
   if (user.rol === "admin" || magOutbound(c, user)) return;
   const sales = check(await db().from("crm_opportunities").select(OPP_COLS).eq("contact_id", c.id).eq("pijplijn", "sales").maybeSingle()) as Opp | null;
-  if (user.rol === "sales" && sales?.verkoper_id === user.setter.id) return;
+  if (user.rol === "sales" && sales) return;
   throw new CrmError("Deze lead is van een andere setter.", 403);
 }
 

@@ -330,8 +330,8 @@ export function Board({
             {paneel.card.verkoper ? <>Opgepakt door <strong>{paneel.card.verkoper.naam}</strong>.</> : "Nog door niemand opgepakt."}
             {" "}<span className="muted">Ingepland door: {paneel.card.wie?.naam ?? "geen setter"}.</span>
           </p>
-          {isSales && mijnId && !paneel.card.verkoper && (
-            <button type="button" className="button" onClick={() => verkoper(paneel.card, mijnId)}>Ik pak deze lead op</button>
+          {isSales && mijnId && paneel.card.verkoper?.id !== mijnId && (
+            <button type="button" className="button" onClick={() => verkoper(paneel.card, mijnId)}>{paneel.card.verkoper ? `Overnemen van ${paneel.card.verkoper.naam}` : "Ik pak deze lead op"}</button>
           )}
           {isSales && mijnId && paneel.card.verkoper?.id === mijnId && (
             <button type="button" className="button button--small button--ghost" onClick={() => verkoper(paneel.card, null)}>Lead vrijgeven</button>
