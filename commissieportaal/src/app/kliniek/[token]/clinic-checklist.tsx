@@ -17,6 +17,8 @@ export function ClinicChecklist(p: {
   eyebrow?: string;
   intro?: string;
   telLabel?: string;
+  /** Voorbeeld voor de admin: niets wordt opgeslagen */
+  voorbeeld?: boolean;
 }) {
   const apiBase = p.apiBase ?? "/api/kliniek";
   const [answers, setAnswers] = useState<Record<string, boolean | null>>(
@@ -49,6 +51,11 @@ export function ClinicChecklist(p: {
   async function save(indienen: boolean) {
     if (indienen && open > 0 && !confirm) {
       setConfirm(true);
+      return;
+    }
+    if (p.voorbeeld) {
+      setConfirm(false);
+      setStatus({ text: indienen ? "Voorbeeld: in het echt is de lijst nu ingediend. Er is niets opgeslagen." : `Voorbeeld: niets opgeslagen · ${done} van ${p.items.length} ingevuld`, ok: true });
       return;
     }
     setBusy(true);
