@@ -31,13 +31,15 @@ export async function voorbeeldVoorKliniek(clinicId: string) {
       return { kliniek: k.naam as string, periode: s.period.label, items: items.map((i, n) => ({ ...i, id: `v${n}`, naam: `Klant ${n + 1} (voorbeeld)`, verschenen: null })) };
     }
   }
-  return { kliniek: k.naam as string, periode: "voorbeeldperiode", items: [1, 2, 3].map((n) => ({ id: `v${n}`, naam: `Klant ${n} (voorbeeld)`, campagne: "Voorbeeldcampagne", verschenen: null })) };
+  // Geen tabblad aan deze kliniek gekoppeld: geen verzonnen aantallen tonen.
+  return { kliniek: k.naam as string, periode: "", items: [] as { id: string; naam: string; campagne: string; verschenen: boolean | null }[] };
 }
 
 /** Stuurt de kliniekmail als voorbeeld naar de admin, met een link naar de voorbeeld-afvinklijst. */
 export async function stuurVoorbeeldmail(clinicId: string) {
   const v = await voorbeeldVoorKliniek(clinicId);
   if (!v) throw new Error("Onbekende kliniek");
+  if (!v.items.length) throw new Error(`Geen tabblad in de laatste indieningen gekoppeld aan ${v.kliniek}`);
   const mail = buildClinicMail({ kliniek: v.kliniek, aantal: v.items.length, periode: v.periode, link: `${base()}/kliniek/${VOORBEELD}${clinicId}` });
   await sendMail({ to: env("ADMIN_EMAIL"), ...mail, subject: `[VOORBEELD ${v.kliniek}] ${mail.subject}` });
 }
