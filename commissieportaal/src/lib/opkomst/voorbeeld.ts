@@ -1,4 +1,5 @@
 import "server-only";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { buildChecklistItems } from "../attendance";
 import { env } from "../env";
 import { buildClinicMail } from "../mail/clinic";
@@ -9,11 +10,23 @@ import { tabMatches } from "./server";
 
 export const VOORBEELD = "voorbeeld-";
 const base = () => env("APP_URL").replace(/\/$/, "");
+const GELDIG_DAGEN = 7;
 
-/**
- * Voorbeeld van wat een kliniek krijgt: aantallen en campagnes uit de laatste indiening,
- * met verzonnen klantnamen (de link is openbaar, dus geen echte namen).
- */
+// Ondertekende voorbeeldlink (7 dagen geldig): toont de echte afvinklijst, maar slaat niets op.
+const teken = (s: string) => createHmac("sha256", `${env("ADMIN_SESSION_SECRET")}:kliniek-voorbeeld`).update(s).digest("base64url").slice(0, 32);
+export function voorbeeldToken(clinicId: string) {
+  const s = `${clinicId}.${Date.now() + GELDIG_DAGEN * 86400000}`;
+  return `${VOORBEELD}${s}.${teken(s)}`;
+}
+export function leesVoorbeeldToken(token: string): string | null {
+  const [id, exp, sig] = token.slice(VOORBEELD.length).split(".");
+  if (!id || !exp || !sig || Number(exp) < Date.now()) return null;
+  const goed = Buffer.from(teken(`${id}.${exp}`));
+  const echt = Buffer.from(sig);
+  return goed.length === echt.length && timingSafeEqual(goed, echt) ? id : null;
+}
+
+/** Wat een kliniek zou krijgen: de groene leads uit de laatste indiening waarin een tabblad aan deze kliniek gekoppeld is. */
 export async function voorbeeldVoorKliniek(clinicId: string) {
   const { data: k } = await db().from("clinics").select("id, naam").eq("id", clinicId).maybeSingle();
   if (!k) return null;
@@ -27,35 +40,19 @@ export async function voorbeeldVoorKliniek(clinicId: string) {
     const matches = await tabMatches(s.snapshot_json);
     const { perClinic } = buildChecklistItems(s.snapshot_json, Object.fromEntries(matches.filter((m) => m.clinic).map((m) => [m.tab, m.clinic!.id])));
     const items = perClinic.get(clinicId);
-    if (items?.length) {
-      return {
-        kliniek: k.naam as string,
-        periode: s.period.label,
-        echteNamen: items.map((i) => `${i.naam} (${i.campagne}, rij ${i.id.split(":").pop()})`),
-        items: items.map((i, n) => ({ ...i, id: `v${n}`, naam: `Klant ${n + 1} (voorbeeld)`, verschenen: null })),
-      };
-    }
+    if (items?.length) return { kliniek: k.naam as string, periode: s.period.label, items: items.map((i) => ({ ...i, verschenen: null })) };
   }
   // Geen tabblad aan deze kliniek gekoppeld: geen verzonnen aantallen tonen.
-  return { kliniek: k.naam as string, periode: "", echteNamen: [] as string[], items: [] as { id: string; naam: string; campagne: string; verschenen: boolean | null }[] };
+  return { kliniek: k.naam as string, periode: "", items: [] as { id: string; naam: string; campagne: string; verschenen: boolean | null }[] };
 }
 
-/** Stuurt de kliniekmail als voorbeeld naar de admin, met een link naar de voorbeeld-afvinklijst. */
+/** Stuurt precies de mail die de kliniek krijgt naar de admin, met een werkende (niet-opslaande) afvinklijst. */
 export async function stuurVoorbeeldmail(clinicId: string) {
   const v = await voorbeeldVoorKliniek(clinicId);
   if (!v) throw new Error("Onbekende kliniek");
   if (!v.items.length) throw new Error(`Geen tabblad in de laatste indieningen gekoppeld aan ${v.kliniek}`);
-  const mail = buildClinicMail({ kliniek: v.kliniek, aantal: v.items.length, periode: v.periode, link: `${base()}/kliniek/${VOORBEELD}${clinicId}` });
-  // Alleen voor de admin: de echte namen uit de indiening, om te controleren. De kliniek krijgt ze in het echt in de afvinklijst.
-  const esc = (t: string) => t.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-  const lijst = v.echteNamen.map((n, i) => `${i + 1}. ${n}`);
-  const blok = `<div style="max-width:560px;margin:16px auto;padding:14px 18px;border:2px dashed #c00;border-radius:10px;font-family:Arial,sans-serif;font-size:14px"><strong>Alleen voor jou (niet in de mail aan de kliniek): ${lijst.length} groene leads uit de indiening</strong><ol style="margin:8px 0 0;padding-left:20px">${v.echteNamen.map((n) => `<li>${esc(n)}</li>`).join("")}</ol></div>`;
-  await sendMail({
-    to: env("ADMIN_EMAIL"),
-    subject: `[VOORBEELD ${v.kliniek}] ${mail.subject}`,
-    text: `ALLEEN VOOR JOU — groene leads uit de indiening:\n${lijst.join("\n")}\n\n--- Zo ziet de mail aan de kliniek eruit ---\n\n${mail.text}`,
-    html: mail.html.replace(/<body([^>]*)>/, `<body$1>${blok}`),
-  });
+  const mail = buildClinicMail({ kliniek: v.kliniek, aantal: v.items.length, periode: v.periode, link: `${base()}/kliniek/${voorbeeldToken(clinicId)}` });
+  await sendMail({ to: env("ADMIN_EMAIL"), ...mail, subject: `[TEST ${v.kliniek}] ${mail.subject}` });
 }
 
 /** Wachtrij (cron): settings.voorbeeldmail_kliniek gezet → voorbeeldmail sturen en leegmaken. */

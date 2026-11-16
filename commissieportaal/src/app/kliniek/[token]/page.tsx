@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { checklistByToken } from "@/lib/opkomst/server";
-import { VOORBEELD, voorbeeldVoorKliniek } from "@/lib/opkomst/voorbeeld";
+import { leesVoorbeeldToken, VOORBEELD, voorbeeldVoorKliniek } from "@/lib/opkomst/voorbeeld";
 import { ClinicChecklist } from "./clinic-checklist";
 
 export const metadata: Metadata = { title: "Opkomst bevestigen · Gewoon Doen Marketing", robots: { index: false } };
@@ -10,9 +10,9 @@ export const dynamic = "force-dynamic";
 export default async function KliniekPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   if (token.startsWith(VOORBEELD)) {
-    const id = token.slice(VOORBEELD.length);
-    const v = /^[0-9a-f-]{36}$/i.test(id) ? await voorbeeldVoorKliniek(id) : null;
-    if (!v) notFound();
+    const id = leesVoorbeeldToken(token);
+    const v = id ? await voorbeeldVoorKliniek(id) : null;
+    if (!v || !v.items.length) notFound();
     return (
       <ClinicChecklist
         token={token}
@@ -22,7 +22,7 @@ export default async function KliniekPage({ params }: { params: Promise<{ token:
         locked={false}
         ingediend={false}
         voorbeeld
-        eyebrow="Voorbeeld · zo ziet de kliniek het"
+        eyebrow="Test · er wordt niets opgeslagen"
       />
     );
   }
